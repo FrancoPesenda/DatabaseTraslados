@@ -1,0 +1,9 @@
+{
+  "http": {
+    "addr": ":8080"
+  },
+  "mysql": {
+    "dsn": "root:password@tcp(127.0.0.1:3306)/app?parseTime=true"
+  }
+}
+

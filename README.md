@@ -2,10 +2,11 @@
 
 ## Ejecutar
 
-Variables de entorno:
+Configuración por archivo JSON:
 
-- `HTTP_ADDR` (default `:8080`)
-- `MYSQL_DSN` (default `root:password@tcp(127.0.0.1:3306)/app?parseTime=true`)
+- `config/<scope>/infrastructure_config.json`
+- Scope por defecto: `local`
+- Podés cambiarlo con `CONFIG_SCOPE` (ej: `dev`, `prod`)
 
 Run:
 
@@ -20,9 +21,12 @@ Healthcheck:
 ## Estructura
 
 - `cmd/api`: entrypoint.
-- `internal/domain`: entidades + contratos.
-- `internal/application`: casos de uso (por dominio).
-- `internal/infrastructure`: MySQL y persistencia.
-- `internal/interfaces/http`: rutas y handlers.
+- `cmd/api/factory.go`: inyección de dependencias y construcción de la app.
+- `cmd/api/config.go`: lectura de `config/<scope>/infrastructure_config.json`.
+- `config/`: configuración por scope.
+- `internal/domain`: entidades + contratos (dominio).
+- `internal/usecase`: lógica de negocio (casos de uso).
+- `internal/repository`: persistencia (adaptadores a MySQL).
+- `internal/handler`: handlers HTTP (deserializa/serializa).
 - `docs`: guía para futuros desarrollos.
 

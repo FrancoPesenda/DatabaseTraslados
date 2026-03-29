@@ -3,15 +3,17 @@ package api
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	mysqlrepo "database/internal/repository/mysql"
+	"database/internal/repository/eventradatabase"
 	handlers "database/internal/handler/http"
 	"database/internal/usecase"
 
+	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"
 )
 
@@ -22,6 +24,9 @@ func NewFxApp() *fx.App {
 			newLogger,
 			newInfraConfig,
 			newDB,
+			newEventraRepo,
+			usecase.NewHealthUsecase,
+			usecase.NewCreateUserUsecase,
 			newHTTPHandler,
 			newHTTPServer,
 		),
@@ -38,14 +43,39 @@ func newInfraConfig() (InfraConfig, error) {
 }
 
 func newDB(cfg InfraConfig) (*sql.DB, error) {
-	return mysqlrepo.Open(cfg.MySQL.DSN)
+	db, err := sql.Open("mysql", cfg.MySQL.DSN)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetMaxOpenConns(cfg.MySQL.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.MySQL.MaxIdleConns)
+	d, err := time.ParseDuration(cfg.MySQL.ConnMaxLifetime)
+	if err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("invalid MYSQL_CONN_MAX_LIFETIME: %w", err)
+	}
+	db.SetConnMaxLifetime(d)
+
+	if err := db.Ping(); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
+	return db, nil
 }
 
-func newHTTPHandler(healthUC *usecase.HealthUsecase) http.Handler {
+func newEventraRepo(db *sql.DB) usecase.UserRepository {
+	return eventradatabase.New(db)
+}
+
+func newHTTPHandler(healthUC *usecase.HealthUsecase, createUserUC *usecase.CreateUserUsecase) http.Handler {
 	healthH := handlers.NewHealthHandler(healthUC)
+	usersH := handlers.NewUsersHandler(createUserUC)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthH.Get)
+	mux.HandleFunc("POST /users", usersH.Create)
 	return mux
 }
 

@@ -2,9 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 type InfraConfig struct {
@@ -17,7 +19,10 @@ type HTTPConfig struct {
 }
 
 type MySQLConfig struct {
-	DSN string `json:"dsn"`
+	DSN             string `json:"dsn"`
+	MaxOpenConns    int    `json:"max_open_conns"`
+	MaxIdleConns    int    `json:"max_idle_conns"`
+	ConnMaxLifetime string `json:"conn_max_lifetime"`
 }
 
 type LoadConfigOptions struct {
@@ -34,18 +39,53 @@ func LoadInfraConfig(opts LoadConfigOptions) (InfraConfig, error) {
 	}
 
 	p := filepath.Join(opts.ConfigDir, opts.Scope, "infrastructure_config.json")
-	b, err := os.ReadFile(p)
-	if err != nil {
-		return InfraConfig{}, fmt.Errorf("read config file %q: %w", p, err)
+	var cfg InfraConfig
+	if b, err := os.ReadFile(p); err == nil {
+		if err := json.Unmarshal(b, &cfg); err != nil {
+			return InfraConfig{}, fmt.Errorf("parse config file %q: %w", p, err)
+		}
+	} else {
+		// Config file is optional when using environment variables.
+		if !errors.Is(err, os.ErrNotExist) {
+			return InfraConfig{}, fmt.Errorf("read config file %q: %w", p, err)
+		}
 	}
 
-	var cfg InfraConfig
-	if err := json.Unmarshal(b, &cfg); err != nil {
-		return InfraConfig{}, fmt.Errorf("parse config file %q: %w", p, err)
+	// Environment variables override file config (secrets should come from env).
+	if v := os.Getenv("HTTP_ADDR"); v != "" {
+		cfg.HTTP.Addr = v
+	}
+	if v := os.Getenv("MYSQL_DSN"); v != "" {
+		cfg.MySQL.DSN = v
+	}
+	if v := os.Getenv("MYSQL_MAX_OPEN_CONNS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.MySQL.MaxOpenConns = n
+		}
+	}
+	if v := os.Getenv("MYSQL_MAX_IDLE_CONNS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.MySQL.MaxIdleConns = n
+		}
+	}
+	if v := os.Getenv("MYSQL_CONN_MAX_LIFETIME"); v != "" {
+		cfg.MySQL.ConnMaxLifetime = v
 	}
 
 	if cfg.HTTP.Addr == "" {
 		cfg.HTTP.Addr = ":8080"
+	}
+	if cfg.MySQL.DSN == "" {
+		return InfraConfig{}, fmt.Errorf("missing MYSQL_DSN (set it in environment or config file %q)", p)
+	}
+	if cfg.MySQL.MaxOpenConns == 0 {
+		cfg.MySQL.MaxOpenConns = 25
+	}
+	if cfg.MySQL.MaxIdleConns == 0 {
+		cfg.MySQL.MaxIdleConns = 25
+	}
+	if cfg.MySQL.ConnMaxLifetime == "" {
+		cfg.MySQL.ConnMaxLifetime = "5m"
 	}
 
 	return cfg, nil

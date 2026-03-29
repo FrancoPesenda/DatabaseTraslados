@@ -2,11 +2,15 @@
 
 ## Ejecutar
 
-Configuración por archivo JSON:
+Configuración (recomendado: variables de entorno con `.env`):
 
-- `config/<scope>/infrastructure_config.json`
-- Scope por defecto: `local`
-- Podés cambiarlo con `CONFIG_SCOPE` (ej: `dev`, `prod`)
+- Copiá `env_configuration` a `.env` y completá valores (NO se commitea).
+
+En Git Bash:
+
+```bash
+cp env_configuration .env
+```
 
 Run:
 
@@ -23,6 +27,7 @@ Healthcheck:
 - `cmd/api`: entrypoint.
 - `cmd/api/factory.go`: inyección de dependencias y construcción de la app.
 - `cmd/api/config.go`: lectura de `config/<scope>/infrastructure_config.json`.
+- `cmd/api/dotenv.go`: carga `.env` (sin dependencias externas).
 - `config/`: configuración por scope.
 - `internal/domain`: entidades + contratos (dominio).
 - `internal/usecase`: lógica de negocio (casos de uso).

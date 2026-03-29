@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 )
 
 type InfraConfig struct {
-	HTTP HTTPConfig  `json:"http"`
+	HTTP  HTTPConfig  `json:"http"`
 	MySQL MySQLConfig `json:"mysql"`
 }
 
@@ -45,13 +45,12 @@ func LoadInfraConfig(opts LoadConfigOptions) (InfraConfig, error) {
 			return InfraConfig{}, fmt.Errorf("parse config file %q: %w", p, err)
 		}
 	} else {
-		// Config file is optional when using environment variables.
 		if !errors.Is(err, os.ErrNotExist) {
 			return InfraConfig{}, fmt.Errorf("read config file %q: %w", p, err)
 		}
 	}
 
-	// Environment variables override file config (secrets should come from env).
+	// Environment variables override file config.
 	if v := os.Getenv("HTTP_ADDR"); v != "" {
 		cfg.HTTP.Addr = v
 	}
@@ -97,4 +96,3 @@ func envOr(key, fallback string) string {
 	}
 	return fallback
 }
-

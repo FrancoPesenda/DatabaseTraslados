@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -9,8 +9,9 @@ import (
 	"os"
 	"time"
 
-	"database/internal/repository/eventradatabase"
+	"database/internal/domain/admin"
 	handlers "database/internal/handler/http"
+	"database/internal/repository/eventradatabase"
 	"database/internal/usecase"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -26,7 +27,7 @@ func NewFxApp() *fx.App {
 			newDB,
 			newEventraRepo,
 			usecase.NewHealthUsecase,
-			usecase.NewCreateUserUsecase,
+			usecase.NewCreateAdminUsecase,
 			newHTTPHandler,
 			newHTTPServer,
 		),
@@ -65,13 +66,13 @@ func newDB(cfg InfraConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-func newEventraRepo(db *sql.DB) usecase.UserRepository {
+func newEventraRepo(db *sql.DB) admin.Repository {
 	return eventradatabase.New(db)
 }
 
-func newHTTPHandler(healthUC *usecase.HealthUsecase, createUserUC *usecase.CreateUserUsecase) http.Handler {
+func newHTTPHandler(healthUC *usecase.HealthUsecase, createAdminUC *usecase.CreateAdminUsecase) http.Handler {
 	healthH := handlers.NewHealthHandler(healthUC)
-	usersH := handlers.NewUsersHandler(createUserUC)
+	usersH := handlers.NewUsersHandler(createAdminUC)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthH.Get)
@@ -104,4 +105,3 @@ func registerLifecycle(lc fx.Lifecycle, logger *log.Logger, srv *http.Server, db
 		},
 	})
 }
-

@@ -18,14 +18,14 @@ func NewUsersHandler(createUC *usecase.CreateAdminUsecase) *UsersHandler {
 }
 
 type createAdminRequest struct {
-	Nombre   string `json:"nombre"`
-	Apellido string `json:"apellido"`
+	Name     string `json:"name"`
+	LastName string `json:"last_name"`
 }
 
 type createAdminResponse struct {
-	ID       string `json:"id"`
-	Nombre   string `json:"nombre"`
-	Apellido string `json:"apellido"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	LastName string `json:"last_name"`
 }
 
 // Create handles POST /users — receives nombre+apellido, persists a new admin
@@ -38,8 +38,8 @@ func (h *UsersHandler) Create(w nethttp.ResponseWriter, r *nethttp.Request) {
 	}
 
 	out, err := h.createUC.Execute(r.Context(), usecase.CreateAdminInput{
-		Name:     req.Nombre,
-		LastName: req.Apellido,
+		Name:     req.Name,
+		LastName: req.LastName,
 	})
 	if err != nil {
 		if errors.Is(err, usecase.ErrValidation) {
@@ -54,7 +54,7 @@ func (h *UsersHandler) Create(w nethttp.ResponseWriter, r *nethttp.Request) {
 	w.WriteHeader(nethttp.StatusCreated)
 	_ = json.NewEncoder(w).Encode(createAdminResponse{
 		ID:       out.ID,
-		Nombre:   out.Name,
-		Apellido: out.LastName,
+		Name:     out.Name,
+		LastName: out.LastName,
 	})
 }

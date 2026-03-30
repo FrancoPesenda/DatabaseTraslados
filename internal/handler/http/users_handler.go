@@ -17,17 +17,6 @@ func NewUsersHandler(createUC *usecase.CreateAdminUsecase) *UsersHandler {
 	return &UsersHandler{createUC: createUC}
 }
 
-type createAdminRequest struct {
-	Nombre   string `json:"nombre"`
-	Apellido string `json:"apellido"`
-}
-
-type createAdminResponse struct {
-	ID       string `json:"id"`
-	Nombre   string `json:"nombre"`
-	Apellido string `json:"apellido"`
-}
-
 // Create handles POST /users — receives nombre+apellido, persists a new admin
 // and responds 201 with the created resource including the generated ID.
 func (h *UsersHandler) Create(w nethttp.ResponseWriter, r *nethttp.Request) {

@@ -24,9 +24,11 @@ func (r *Repository) Create(ctx context.Context, a admin.Admin) (admin.Admin, er
 	res, err := r.db.ExecContext(
 		ctx,
 		`INSERT INTO user (name, last_name, email, password, type)
-		 VALUES (?, ?, '', '', 'admin')`,
+		 VALUES (?, ?, ?, ?, 'admin')`,
 		a.Name,
 		a.LastName,
+		a.Email,
+		a.Password,
 	)
 	if err != nil {
 		return admin.Admin{}, fmt.Errorf("insert user: %w", err)
@@ -40,9 +42,9 @@ func (r *Repository) Create(ctx context.Context, a admin.Admin) (admin.Admin, er
 	var result admin.Admin
 	err = r.db.QueryRowContext(
 		ctx,
-		`SELECT id, name, last_name FROM user WHERE id = ?`,
+		`SELECT id, name, last_name, email FROM user WHERE id = ?`,
 		lastID,
-	).Scan(&result.ID, &result.Name, &result.LastName)
+	).Scan(&result.ID, &result.Name, &result.LastName, &result.Email)
 	if err != nil {
 		return admin.Admin{}, fmt.Errorf("select user by id: %w", err)
 	}

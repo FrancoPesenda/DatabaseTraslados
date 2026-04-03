@@ -1,8 +1,8 @@
--- ============================================================
---  Base de datos: Festival / Eventos
---  Motor: MySQL 8+
---  Generado a partir del diagrama de clases UML
--- ============================================================
+-- =============================================================
+--  DATABASE SCHEMA
+--  Generated from ERD v5
+--  Tables: 23
+-- =============================================================
 
 CREATE DATABASE IF NOT EXISTS eventra
   CHARACTER SET utf8mb4
@@ -10,121 +10,258 @@ CREATE DATABASE IF NOT EXISTS eventra
 
 USE eventra;
 
--- ------------------------------------------------------------
--- LOCATION
--- ------------------------------------------------------------
-CREATE TABLE location (
-    id            INT             NOT NULL AUTO_INCREMENT,
-    city          VARCHAR(100)    NOT NULL,
-    province      VARCHAR(100)    NOT NULL,
-    gps_coords    VARCHAR(100)    NOT NULL COMMENT 'Format: lat,lng  eg: -31.4135,-64.1811',
-    PRIMARY KEY (id)
+-- =============================================================
+--  USERS & PERMISSIONS
+-- =============================================================
+
+CREATE TABLE role (
+  id    INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name  VARCHAR(50)   NOT NULL UNIQUE,
+  PRIMARY KEY (id)
 );
 
--- ------------------------------------------------------------
--- USER (base table — single-table inheritance with type)
--- ------------------------------------------------------------
+CREATE TABLE permission (
+  id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name         VARCHAR(100)  NOT NULL UNIQUE,
+  description  VARCHAR(255)      NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE role_permission (
+  role_id       INT UNSIGNED  NOT NULL,
+  permission_id INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (role_id, permission_id),
+  CONSTRAINT fk_rp_role
+    FOREIGN KEY (role_id)       REFERENCES role(id)       ON DELETE CASCADE,
+  CONSTRAINT fk_rp_permission
+    FOREIGN KEY (permission_id) REFERENCES permission(id) ON DELETE CASCADE
+);
+
 CREATE TABLE user (
-    id            INT             NOT NULL AUTO_INCREMENT,
-    name          VARCHAR(100)    NOT NULL,
-    last_name     VARCHAR(100)    NOT NULL,
-    email         VARCHAR(150)    NOT NULL UNIQUE,
-    password      VARCHAR(255)    NOT NULL,
-    type          ENUM('admin','company','client') NOT NULL,
-    -- Company-specific field (NULL for admin and client)
-    company_name  VARCHAR(200)    NULL,
-    PRIMARY KEY (id)
+  id              INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  username        VARCHAR(100)  NOT NULL UNIQUE,
+  password        VARCHAR(255)  NOT NULL,
+  role_id         INT UNSIGNED  NOT NULL,
+  account_expiry  DATE              NULL COMMENT 'Only required for driver accounts',
+  PRIMARY KEY (id),
+  CONSTRAINT fk_user_role
+    FOREIGN KEY (role_id) REFERENCES role(id)
 );
 
--- ------------------------------------------------------------
--- EVENT  (published by an Admin)
--- ------------------------------------------------------------
-CREATE TABLE event (
-    id            INT             NOT NULL AUTO_INCREMENT,
-    name          VARCHAR(200)    NOT NULL,
-    date          DATE            NOT NULL,
-    location_id   INT             NOT NULL,
-    admin_id      INT             NOT NULL COMMENT 'Admin user who published the event',
-    PRIMARY KEY (id),
-    CONSTRAINT fk_event_location FOREIGN KEY (location_id) REFERENCES location (id),
-    CONSTRAINT fk_event_admin    FOREIGN KEY (admin_id)    REFERENCES user (id)
+-- =============================================================
+--  GEOGRAPHY
+-- =============================================================
+
+CREATE TABLE country (
+  id    INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name  VARCHAR(100)  NOT NULL UNIQUE,
+  PRIMARY KEY (id)
 );
 
--- ------------------------------------------------------------
--- SERVICE  (published by a Company, appears in an Event)
--- ------------------------------------------------------------
+CREATE TABLE province (
+  id          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name        VARCHAR(100)  NOT NULL,
+  country_id  INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_province_country
+    FOREIGN KEY (country_id) REFERENCES country(id)
+);
+
+CREATE TABLE city (
+  id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name         VARCHAR(100)  NOT NULL,
+  province_id  INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_city_province
+    FOREIGN KEY (province_id) REFERENCES province(id)
+);
+
+CREATE TABLE location (
+  id       INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  stadium  VARCHAR(150)  NOT NULL,
+  city_id  INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_location_city
+    FOREIGN KEY (city_id) REFERENCES city(id)
+);
+
+-- =============================================================
+--  COMPANIES & SERVICES
+-- =============================================================
+
+CREATE TABLE company (
+  id    INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name  VARCHAR(150)  NOT NULL,
+  PRIMARY KEY (id)
+);
+
 CREATE TABLE service (
-    id            INT             NOT NULL AUTO_INCREMENT,
-    name          VARCHAR(200)    NOT NULL,
-    description   TEXT            NULL,
-    price         DECIMAL(10,2)   NOT NULL,
-    company_id    INT             NOT NULL COMMENT 'Company user who published the service',
-    PRIMARY KEY (id),
-    CONSTRAINT fk_service_company FOREIGN KEY (company_id) REFERENCES user (id)
+  id          INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  date        DATE            NOT NULL,
+  price       DECIMAL(10, 2)  NOT NULL,
+  company_id  INT UNSIGNED    NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_service_company
+    FOREIGN KEY (company_id) REFERENCES company(id)
 );
 
--- ------------------------------------------------------------
--- EVENT_SERVICE  (an event can have multiple services)
--- ------------------------------------------------------------
-CREATE TABLE event_service (
-    event_id      INT             NOT NULL,
-    service_id    INT             NOT NULL,
-    PRIMARY KEY (event_id, service_id),
-    CONSTRAINT fk_es_event    FOREIGN KEY (event_id)   REFERENCES event    (id),
-    CONSTRAINT fk_es_service  FOREIGN KEY (service_id) REFERENCES service  (id)
+-- =============================================================
+--  REQUESTS
+-- =============================================================
+
+CREATE TABLE request (
+  id            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  type          VARCHAR(50)   NOT NULL,
+  description   TEXT              NULL,
+  requester_id  INT UNSIGNED  NOT NULL COMMENT 'User who creates the request',
+  approver_id   INT UNSIGNED      NULL COMMENT 'Admin who approves the request',
+  PRIMARY KEY (id),
+  CONSTRAINT fk_request_requester
+    FOREIGN KEY (requester_id) REFERENCES user(id),
+  CONSTRAINT fk_request_approver
+    FOREIGN KEY (approver_id)  REFERENCES user(id)
 );
 
--- ------------------------------------------------------------
--- STAGE  (belongs to an Event)
--- ------------------------------------------------------------
-CREATE TABLE stage (
-    id            INT             NOT NULL AUTO_INCREMENT,
-    name          VARCHAR(200)    NOT NULL,
-    description   TEXT            NULL,
-    schedule      VARCHAR(100)    NULL COMMENT 'eg: 18:00 - 23:00',
-    event_id      INT             NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_stage_event FOREIGN KEY (event_id) REFERENCES event (id)
-);
+-- =============================================================
+--  MUSIC
+-- =============================================================
 
--- ------------------------------------------------------------
--- BAND
--- ------------------------------------------------------------
 CREATE TABLE band (
-    id            INT             NOT NULL AUTO_INCREMENT,
-    name          VARCHAR(200)    NOT NULL,
-    PRIMARY KEY (id)
+  id    INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name  VARCHAR(150)  NOT NULL,
+  PRIMARY KEY (id)
 );
 
--- ------------------------------------------------------------
--- STAGE_BAND  (a stage has multiple bands)
--- ------------------------------------------------------------
-CREATE TABLE stage_band (
-    stage_id      INT             NOT NULL,
-    band_id       INT             NOT NULL,
-    PRIMARY KEY (stage_id, band_id),
-    CONSTRAINT fk_sb_stage FOREIGN KEY (stage_id) REFERENCES stage (id),
-    CONSTRAINT fk_sb_band  FOREIGN KEY (band_id)  REFERENCES band  (id)
-);
-
--- ------------------------------------------------------------
--- ARTIST
--- ------------------------------------------------------------
 CREATE TABLE artist (
-    id            INT             NOT NULL AUTO_INCREMENT,
-    name          VARCHAR(100)    NOT NULL,
-    last_name     VARCHAR(100)    NOT NULL,
-    genre         VARCHAR(100)    NULL,
-    PRIMARY KEY (id)
+  id    INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name  VARCHAR(150)  NOT NULL,
+  PRIMARY KEY (id)
 );
 
--- ------------------------------------------------------------
--- BAND_ARTIST  (a band has multiple artists, M:N)
--- ------------------------------------------------------------
 CREATE TABLE band_artist (
-    band_id       INT             NOT NULL,
-    artist_id     INT             NOT NULL,
-    PRIMARY KEY (band_id, artist_id),
-    CONSTRAINT fk_ba_band    FOREIGN KEY (band_id)   REFERENCES band   (id),
-    CONSTRAINT fk_ba_artist  FOREIGN KEY (artist_id) REFERENCES artist (id)
+  band_id    INT UNSIGNED  NOT NULL,
+  artist_id  INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (band_id, artist_id),
+  CONSTRAINT fk_ba_band
+    FOREIGN KEY (band_id)   REFERENCES band(id)   ON DELETE CASCADE,
+  CONSTRAINT fk_ba_artist
+    FOREIGN KEY (artist_id) REFERENCES artist(id) ON DELETE CASCADE
+);
+
+-- =============================================================
+--  EVENTS
+-- =============================================================
+
+CREATE TABLE event (
+  id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name         VARCHAR(150)  NOT NULL,
+  location_id  INT UNSIGNED  NOT NULL,
+  start_date   DATE          NOT NULL,
+  end_date     DATE          NOT NULL,
+  image        VARCHAR(500)      NULL,
+  request_id   INT UNSIGNED      NULL,
+  service_id   INT UNSIGNED      NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_event_location
+    FOREIGN KEY (location_id) REFERENCES location(id),
+  CONSTRAINT fk_event_request
+    FOREIGN KEY (request_id)  REFERENCES request(id),
+  CONSTRAINT fk_event_service
+    FOREIGN KEY (service_id)  REFERENCES service(id)
+);
+
+CREATE TABLE event_day (
+  id        INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  event_id  INT UNSIGNED  NOT NULL,
+  date      DATE          NOT NULL,
+  name      VARCHAR(100)      NULL COMMENT 'e.g. Day 1 - Opening Night',
+  PRIMARY KEY (id),
+  CONSTRAINT fk_event_day_event
+    FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE
+);
+
+CREATE TABLE transport (
+  id          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  position    VARCHAR(150)  NOT NULL,
+  event_id    INT UNSIGNED  NOT NULL,
+  service_id  INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_transport_event
+    FOREIGN KEY (event_id)   REFERENCES event(id),
+  CONSTRAINT fk_transport_service
+    FOREIGN KEY (service_id) REFERENCES service(id)
+);
+
+-- =============================================================
+--  ROSTER
+-- =============================================================
+
+CREATE TABLE roster (
+  id        INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  event_id  INT UNSIGNED  NOT NULL UNIQUE COMMENT '1:1 with event',
+  PRIMARY KEY (id),
+  CONSTRAINT fk_roster_event
+    FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE
+);
+
+CREATE TABLE stage (
+  id         INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name       VARCHAR(100)  NOT NULL,
+  capacity   INT UNSIGNED      NULL,
+  roster_id  INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_stage_roster
+    FOREIGN KEY (roster_id) REFERENCES roster(id) ON DELETE CASCADE
+);
+
+CREATE TABLE roster_item (
+  id            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  roster_id     INT UNSIGNED  NOT NULL,
+  stage_id      INT UNSIGNED  NOT NULL,
+  band_id       INT UNSIGNED  NOT NULL,
+  event_day_id  INT UNSIGNED  NOT NULL,
+  start_time    TIME          NOT NULL,
+  end_time      TIME          NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_ri_roster
+    FOREIGN KEY (roster_id)    REFERENCES roster(id),
+  CONSTRAINT fk_ri_stage
+    FOREIGN KEY (stage_id)     REFERENCES stage(id),
+  CONSTRAINT fk_ri_band
+    FOREIGN KEY (band_id)      REFERENCES band(id),
+  CONSTRAINT fk_ri_event_day
+    FOREIGN KEY (event_day_id) REFERENCES event_day(id)
+);
+
+-- =============================================================
+--  PIVOT TABLES
+-- =============================================================
+
+CREATE TABLE home (
+  id  INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE home_event (
+  home_id    INT UNSIGNED         NOT NULL,
+  event_id   INT UNSIGNED         NOT NULL,
+  order_num  TINYINT UNSIGNED     NOT NULL DEFAULT 0,
+  PRIMARY KEY (home_id, event_id),
+  CONSTRAINT fk_he_home
+    FOREIGN KEY (home_id)  REFERENCES home(id)  ON DELETE CASCADE,
+  CONSTRAINT fk_he_event
+    FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE
+);
+
+CREATE TABLE event_company (
+  event_id        INT UNSIGNED  NOT NULL,
+  company_id      INT UNSIGNED  NOT NULL,
+  coordinator_id  INT UNSIGNED  NOT NULL COMMENT 'User with coordinator role',
+  PRIMARY KEY (event_id, company_id),
+  CONSTRAINT fk_ec_event
+    FOREIGN KEY (event_id)       REFERENCES event(id)   ON DELETE CASCADE,
+  CONSTRAINT fk_ec_company
+    FOREIGN KEY (company_id)     REFERENCES company(id),
+  CONSTRAINT fk_ec_coordinator
+    FOREIGN KEY (coordinator_id) REFERENCES user(id)
 );

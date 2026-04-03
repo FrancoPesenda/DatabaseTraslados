@@ -70,9 +70,9 @@ func newEventraRepo(db *sql.DB) admin.Repository {
 	return eventradatabase.New(db)
 }
 
-func newHTTPHandler(healthUC *usecase.HealthUsecase, createAdminUC *usecase.CreateAdminUsecase) http.Handler {
+func newHTTPHandler(healthUC *usecase.HealthUsecase, createAdminUC *usecase.CreateAdminUsecase, logger *log.Logger) http.Handler {
 	healthH := handlers.NewHealthHandler(healthUC)
-	usersH := handlers.NewUsersHandler(createAdminUC)
+	usersH := handlers.NewUsersHandler(createAdminUC, logger)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthH.Get)

@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"bufio"
@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-// LoadDotEnv loads KEY=VALUE lines from a file (usually ".env") into the process
-// environment. It ignores empty lines and comments starting with '#'.
-//
-// If the file doesn't exist, it returns nil.
 func LoadDotEnv(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
@@ -46,4 +42,3 @@ func LoadDotEnv(path string) error {
 	}
 	return nil
 }
-

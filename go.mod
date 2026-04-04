@@ -1,4 +1,4 @@
-module eventra
+module github.com/FrancoPesenda/eventra
 
 go 1.22
 
@@ -10,6 +10,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect

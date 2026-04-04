@@ -1,6 +1,8 @@
 package main
 
+import "github.com/FrancoPesenda/eventra/internal/config"
+
 func main() {
-	_ = LoadDotEnv(".env")
+	_ = config.LoadDotEnv(".env")
 	NewFxApp().Run()
 }

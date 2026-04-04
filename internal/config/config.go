@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -50,7 +50,6 @@ func LoadInfraConfig(opts LoadConfigOptions) (InfraConfig, error) {
 		}
 	}
 
-	// Environment variables override file config.
 	if v := os.Getenv("HTTP_ADDR"); v != "" {
 		cfg.HTTP.Addr = v
 	}

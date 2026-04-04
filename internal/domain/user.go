@@ -5,46 +5,46 @@ import "errors"
 var (
 	ErrNameRequired     = errors.New("field 'name' is required")
 	ErrLastNameRequired = errors.New("field 'last_name' is required")
+	ErrUserNameRequired = errors.New("field 'user_name' is required")
 	ErrEmailRequired    = errors.New("field 'email' is required")
 	ErrPasswordRequired = errors.New("field 'password' is required")
 )
 
-type User struct {
-	ID       int
-	Name     string
-	LastName string
-	Email    string
-	Password string
-}
+const (
+	CompanyRole Role = "company"
+	DefaultRole Role = "default"
+)
 
-func (u *User) isNameValid() bool {
+type (
+	Role string
+
+	User struct {
+		ID       int
+		Name     string
+		LastName string
+		UserName string
+		Email    string
+		Password string
+		Role     Role
+	}
+)
+
+func (u *User) IsNameValid() bool {
 	return u.Name != ""
 }
 
-func (u *User) isLastNameValid() bool {
+func (u *User) IsLastNameValid() bool {
 	return u.LastName != ""
 }
 
-func (u *User) isEmailValid() bool {
+func (u *User) IsUserNameValid() bool {
+	return u.UserName != ""
+}
+
+func (u *User) IsEmailValid() bool {
 	return u.Email != ""
 }
 
-func (u *User) isPasswordValid() bool {
+func (u *User) IsPasswordValid() bool {
 	return u.Password != ""
-}
-
-func (u *User) Validate() error {
-	if !u.isNameValid() {
-		return ErrNameRequired
-	}
-	if !u.isLastNameValid() {
-		return ErrLastNameRequired
-	}
-	if !u.isEmailValid() {
-		return ErrEmailRequired
-	}
-	if !u.isPasswordValid() {
-		return ErrPasswordRequired
-	}
-	return nil
 }

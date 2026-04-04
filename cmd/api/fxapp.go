@@ -9,12 +9,13 @@ import (
 	"os"
 	"time"
 
-	userhandler "eventra/cmd/handler/user"
-	"eventra/internal/repository/eventradatabase"
-	userCreate "eventra/internal/usecase/user/create"
-
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"
+
+	userhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/createcompany"
+	"github.com/FrancoPesenda/eventra/internal/config"
+	"github.com/FrancoPesenda/eventra/internal/repository/eventradatabase"
+	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/createcompany"
 )
 
 func NewFxApp() *fx.App {
@@ -23,9 +24,16 @@ func NewFxApp() *fx.App {
 			newLogger,
 			newInfraConfig,
 			newDB,
-			newEventraRepo,
-			userCreate.NewUseCase,
-			newHTTPHandler,
+			fx.Annotate(
+				eventradatabase.NewRepository,
+				fx.As(new(userCreate.UserRepository)),
+			),
+			fx.Annotate(
+				userCreate.NewUseCase,
+				fx.As(new(userhandler.UseCase)),
+			),
+			userhandler.NewCreateHandler,
+			newHTTPMux,
 			newHTTPServer,
 		),
 		fx.Invoke(registerLifecycle),
@@ -36,11 +44,11 @@ func newLogger() *log.Logger {
 	return log.New(os.Stdout, "", log.LstdFlags|log.LUTC)
 }
 
-func newInfraConfig() (InfraConfig, error) {
-	return LoadInfraConfig(LoadConfigOptions{})
+func newInfraConfig() (config.InfraConfig, error) {
+	return config.LoadInfraConfig(config.LoadConfigOptions{})
 }
 
-func newDB(cfg InfraConfig) (*sql.DB, error) {
+func newDB(cfg config.InfraConfig) (*sql.DB, error) {
 	db, err := sql.Open("mysql", cfg.MySQL.DSN)
 	if err != nil {
 		return nil, err
@@ -63,22 +71,10 @@ func newDB(cfg InfraConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-func newEventraRepo(db *sql.DB) userCreate.Repository {
-	return eventradatabase.New(db)
-}
-
-func newHTTPHandler(createUC *userCreate.UseCase, logger *log.Logger) http.Handler {
-	usersH := userhandler.NewCreateHandler(createUC, logger)
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /users", usersH.Handle)
-	return mux
-}
-
-func newHTTPServer(cfg InfraConfig, h http.Handler) *http.Server {
+func newHTTPServer(cfg config.InfraConfig, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:              cfg.HTTP.Addr,
-		Handler:           h,
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 }

@@ -1,21 +1,25 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
-	domain "eventra/internal/domain"
-	userCreate "eventra/internal/usecase/user/create"
+	domain "github.com/FrancoPesenda/eventra/internal/domain"
 )
 
+type UseCase interface {
+	CreateCompanyUser(ctx context.Context, user domain.User) (domain.User, error)
+}
+
 type CreateHandler struct {
-	usecase *userCreate.UseCase
+	usecase UseCase
 	logger  *log.Logger
 }
 
-func NewCreateHandler(usecase *userCreate.UseCase, logger *log.Logger) *CreateHandler {
+func NewCreateHandler(usecase UseCase, logger *log.Logger) *CreateHandler {
 	return &CreateHandler{
 		usecase: usecase,
 		logger:  logger,
@@ -23,7 +27,7 @@ func NewCreateHandler(usecase *userCreate.UseCase, logger *log.Logger) *CreateHa
 }
 
 func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	var req createRequest
+	var req request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Printf("[Layer:Handler][error_message:%s][request_body:%+v]", err.Error(), req)
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -32,7 +36,7 @@ func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Printf("Incoming Request: %+v", req)
 
-	out, err := h.usecase.Execute(r.Context(), req.toDomain())
+	out, err := h.usecase.CreateCompanyUser(r.Context(), req.toDomain())
 	if err != nil {
 		h.logger.Printf("[Layer:Handler][error_message:%s][request_body:%+v]", err.Error(), req)
 		processError(w, err)
@@ -47,7 +51,6 @@ func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
 func processError(w http.ResponseWriter, err error) {
 	switch err {
 	case domain.ErrNameRequired,
-		domain.ErrLastNameRequired,
 		domain.ErrEmailRequired,
 		domain.ErrPasswordRequired:
 		writeError(w, http.StatusBadRequest, fmt.Sprintf("Bad Request error: %s", err.Error()))

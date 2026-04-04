@@ -4,5 +4,7 @@
 /tmp
 /tmp.*
 .claude
-
+.vscode/
+__debug_bin*
+*.exe
 

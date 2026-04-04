@@ -9,16 +9,14 @@ import (
 	"os"
 	"time"
 
-	"database/internal/domain/admin"
-	handlers "database/internal/handler/http"
-	"database/internal/repository/eventradatabase"
-	"database/internal/usecase"
+	userhandler "eventra/cmd/handler/user"
+	"eventra/internal/repository/eventradatabase"
+	userCreate "eventra/internal/usecase/user/create"
 
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"
 )
 
-// NewFxApp builds the application using Uber FX (DI + lifecycle).
 func NewFxApp() *fx.App {
 	return fx.New(
 		fx.Provide(
@@ -26,8 +24,7 @@ func NewFxApp() *fx.App {
 			newInfraConfig,
 			newDB,
 			newEventraRepo,
-			usecase.NewHealthUsecase,
-			usecase.NewCreateAdminUsecase,
+			userCreate.NewUseCase,
 			newHTTPHandler,
 			newHTTPServer,
 		),
@@ -66,17 +63,15 @@ func newDB(cfg InfraConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-func newEventraRepo(db *sql.DB) admin.Repository {
+func newEventraRepo(db *sql.DB) userCreate.Repository {
 	return eventradatabase.New(db)
 }
 
-func newHTTPHandler(healthUC *usecase.HealthUsecase, createAdminUC *usecase.CreateAdminUsecase, logger *log.Logger) http.Handler {
-	healthH := handlers.NewHealthHandler(healthUC)
-	usersH := handlers.NewUsersHandler(createAdminUC, logger)
+func newHTTPHandler(createUC *userCreate.UseCase, logger *log.Logger) http.Handler {
+	usersH := userhandler.NewCreateHandler(createUC, logger)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", healthH.Get)
-	mux.HandleFunc("POST /users", usersH.Create)
+	mux.HandleFunc("POST /users", usersH.Handle)
 	return mux
 }
 

@@ -1,5 +1,8 @@
 .env
 .env.*
+.air.toml
+/tmp
+/tmp.*
 .claude
 
 

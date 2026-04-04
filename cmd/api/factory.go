@@ -40,7 +40,7 @@ func Build(ctx context.Context) (*App, error) {
 	createAdminUC := usecase.NewCreateAdminUsecase(repo)
 
 	healthH := handlers.NewHealthHandler(healthUC)
-	usersH := handlers.NewUsersHandler(createAdminUC)
+	usersH := handlers.NewUsersHandler(createAdminUC, logger)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthH.Get)

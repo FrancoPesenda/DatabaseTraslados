@@ -16,6 +16,8 @@ var ErrValidation = errors.New("validation error")
 type CreateAdminInput struct {
 	Name     string
 	LastName string
+	Email    string
+	Password string
 }
 
 // CreateAdminUsecase orchestrates the creation of an admin.
@@ -40,5 +42,7 @@ func (u *CreateAdminUsecase) Execute(ctx context.Context, in CreateAdminInput) (
 	return u.repo.Create(ctx, admin.Admin{
 		Name:     in.Name,
 		LastName: in.LastName,
+		Email:    in.Email,
+		Password: in.Password,
 	})
 }

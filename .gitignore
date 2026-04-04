@@ -6,4 +6,5 @@
 .claude
 .vscode/
 __debug_bin*
+*.exe
 

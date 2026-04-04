@@ -11,11 +11,17 @@ import (
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
 )
 
-type Repository struct {
-	db *sql.DB
+type DB interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	Close() error
 }
 
-func NewRepository(db *sql.DB) *Repository {
+type Repository struct {
+	db DB
+}
+
+func NewRepository(db DB) *Repository {
 	return &Repository{db: db}
 }
 

@@ -13,6 +13,7 @@ import (
 	"go.uber.org/fx"
 
 	userhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/create_company"
+	"github.com/FrancoPesenda/eventra/internal/config"
 	"github.com/FrancoPesenda/eventra/internal/repository/eventradatabase"
 	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/company/create"
 )
@@ -23,9 +24,13 @@ func NewFxApp() *fx.App {
 			newLogger,
 			newInfraConfig,
 			newDB,
-			newEventraRepo,
+			fx.Annotate(
+				eventradatabase.NewRepository,
+				fx.As(new(userCreate.UserRepository)),
+			),
 			userCreate.NewUseCase,
-			newHTTPHandler,
+			userhandler.NewCreateHandler,
+			newHTTPMux,
 			newHTTPServer,
 		),
 		fx.Invoke(registerLifecycle),
@@ -36,11 +41,11 @@ func newLogger() *log.Logger {
 	return log.New(os.Stdout, "", log.LstdFlags|log.LUTC)
 }
 
-func newInfraConfig() (InfraConfig, error) {
-	return LoadInfraConfig(LoadConfigOptions{})
+func newInfraConfig() (config.InfraConfig, error) {
+	return config.LoadInfraConfig(config.LoadConfigOptions{})
 }
 
-func newDB(cfg InfraConfig) (*sql.DB, error) {
+func newDB(cfg config.InfraConfig) (eventradatabase.DB, error) {
 	db, err := sql.Open("mysql", cfg.MySQL.DSN)
 	if err != nil {
 		return nil, err
@@ -63,19 +68,7 @@ func newDB(cfg InfraConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-func newEventraRepo(db *sql.DB) userCreate.UserRepository {
-	return eventradatabase.NewRepository(db)
-}
-
-func newHTTPHandler(createUC *userCreate.UseCase, logger *log.Logger) http.Handler {
-	usersH := userhandler.NewCreateHandler(createUC, logger)
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /user/company", usersH.Handle)
-	return mux
-}
-
-func newHTTPServer(cfg InfraConfig, handler http.Handler) *http.Server {
+func newHTTPServer(cfg config.InfraConfig, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:              cfg.HTTP.Addr,
 		Handler:           handler,
@@ -83,7 +76,7 @@ func newHTTPServer(cfg InfraConfig, handler http.Handler) *http.Server {
 	}
 }
 
-func registerLifecycle(lc fx.Lifecycle, logger *log.Logger, srv *http.Server, db *sql.DB) {
+func registerLifecycle(lc fx.Lifecycle, logger *log.Logger, srv *http.Server, db eventradatabase.DB) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Printf("http listening on %s", srv.Addr)

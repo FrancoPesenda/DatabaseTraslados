@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	domain "database/internal/domain"
+	domain "eventra/internal/domain"
 )
 
 type Repository interface {

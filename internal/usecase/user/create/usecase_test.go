@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	domain "database/internal/domain"
+	domain "eventra/internal/domain"
 
 	"github.com/stretchr/testify/assert"
 )

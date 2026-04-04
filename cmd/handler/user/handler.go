@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	domain "database/internal/domain"
-	userCreate "database/usecase/user/create"
+	domain "eventra/internal/domain"
+	userCreate "eventra/internal/usecase/user/create"
 )
 
 type CreateHandler struct {

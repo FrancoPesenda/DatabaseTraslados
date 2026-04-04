@@ -1,6 +1,6 @@
 package user
 
-import domain "database/internal/domain"
+import domain "eventra/internal/domain"
 
 type createResponse struct {
 	ID       int    `json:"id"`

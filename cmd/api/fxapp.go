@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	userhandler "database/cmd/handler/user"
-	"database/internal/repository/eventradatabase"
-	userCreate "database/usecase/user/create"
+	userhandler "eventra/cmd/handler/user"
+	"eventra/internal/repository/eventradatabase"
+	userCreate "eventra/internal/usecase/user/create"
 
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"

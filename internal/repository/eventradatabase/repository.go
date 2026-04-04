@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	domain "database/internal/domain"
+	domain "eventra/internal/domain"
 	_ "github.com/go-sql-driver/mysql"
 )
 

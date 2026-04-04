@@ -1,4 +1,4 @@
-module database
+module eventra
 
 go 1.22
 

@@ -1,21 +1,25 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
-	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/company/create"
 )
 
+type UseCase interface {
+	CreateCompanyUser(ctx context.Context, user domain.User) (domain.User, error)
+}
+
 type CreateHandler struct {
-	usecase *userCreate.UseCase
+	usecase UseCase
 	logger  *log.Logger
 }
 
-func NewCreateHandler(usecase *userCreate.UseCase, logger *log.Logger) *CreateHandler {
+func NewCreateHandler(usecase UseCase, logger *log.Logger) *CreateHandler {
 	return &CreateHandler{
 		usecase: usecase,
 		logger:  logger,

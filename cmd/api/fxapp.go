@@ -12,10 +12,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"
 
-	userhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/create_company"
+	userhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/createcompany"
 	"github.com/FrancoPesenda/eventra/internal/config"
 	"github.com/FrancoPesenda/eventra/internal/repository/eventradatabase"
-	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/company/create"
+	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/createcompany"
 )
 
 func NewFxApp() *fx.App {
@@ -28,7 +28,10 @@ func NewFxApp() *fx.App {
 				eventradatabase.NewRepository,
 				fx.As(new(userCreate.UserRepository)),
 			),
-			userCreate.NewUseCase,
+			fx.Annotate(
+				userCreate.NewUseCase,
+				fx.As(new(userhandler.UseCase)),
+			),
 			userhandler.NewCreateHandler,
 			newHTTPMux,
 			newHTTPServer,
@@ -45,7 +48,7 @@ func newInfraConfig() (config.InfraConfig, error) {
 	return config.LoadInfraConfig(config.LoadConfigOptions{})
 }
 
-func newDB(cfg config.InfraConfig) (eventradatabase.DB, error) {
+func newDB(cfg config.InfraConfig) (*sql.DB, error) {
 	db, err := sql.Open("mysql", cfg.MySQL.DSN)
 	if err != nil {
 		return nil, err
@@ -76,7 +79,7 @@ func newHTTPServer(cfg config.InfraConfig, handler http.Handler) *http.Server {
 	}
 }
 
-func registerLifecycle(lc fx.Lifecycle, logger *log.Logger, srv *http.Server, db eventradatabase.DB) {
+func registerLifecycle(lc fx.Lifecycle, logger *log.Logger, srv *http.Server, db *sql.DB) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Printf("http listening on %s", srv.Addr)

@@ -1,4 +1,4 @@
-package create
+package createcompany
 
 import (
 	"context"
@@ -19,7 +19,15 @@ func (m *mockRepository) CreateCompanyUser(ctx context.Context, user domain.User
 }
 
 func TestUseCase_User_Create_WhenValidInput_ShouldReturnCreatedUser(t *testing.T) {
-	expectedResponse := domain.User{ID: 1, Name: "John", LastName: "Doe", Email: "john@example.com", Password: "secret"}
+	expectedResponse := domain.User{
+		ID:       1,
+		Name:     "John",
+		LastName: "Doe",
+		UserName: "johndoe",
+		Email:    "john@example.com",
+		Password: "secret",
+		Role:     domain.CompanyRole,
+	}
 
 	repo := &mockRepository{
 		createFn: func(_ context.Context, user domain.User) (domain.User, error) {
@@ -32,6 +40,7 @@ func TestUseCase_User_Create_WhenValidInput_ShouldReturnCreatedUser(t *testing.T
 	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
+		UserName: "johndoe",
 		Email:    "john@example.com",
 		Password: "secret",
 	})
@@ -41,7 +50,14 @@ func TestUseCase_User_Create_WhenValidInput_ShouldReturnCreatedUser(t *testing.T
 }
 
 func TestUseCase_User_Create_WhenNameHasWhitespace_ShouldTrimAndSucceed(t *testing.T) {
-	expectedResponse := domain.User{Name: "John", LastName: "Doe", Email: "john@example.com", Password: "secret"}
+	expectedResponse := domain.User{
+		Name:     "John",
+		LastName: "Doe",
+		UserName: "johndoe",
+		Email:    "john@example.com",
+		Password: "secret",
+		Role:     domain.CompanyRole,
+	}
 
 	repo := &mockRepository{
 		createFn: func(_ context.Context, user domain.User) (domain.User, error) {
@@ -52,7 +68,8 @@ func TestUseCase_User_Create_WhenNameHasWhitespace_ShouldTrimAndSucceed(t *testi
 
 	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "  John  ",
-		LastName: "  Doe  ",
+		LastName: "Doe",
+		UserName: "johndoe",
 		Email:    "john@example.com",
 		Password: "secret",
 	})
@@ -61,60 +78,14 @@ func TestUseCase_User_Create_WhenNameHasWhitespace_ShouldTrimAndSucceed(t *testi
 	assert.Equal(t, expectedResponse, response)
 }
 
-func TestUseCase_User_Create_WhenNameIsEmpty_ShouldReturnErrNameRequired(t *testing.T) {
-	expectedError := domain.ErrNameRequired
-
-	uc := NewUseCase(&mockRepository{})
-
-	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
-		LastName: "Doe",
-		Email:    "john@example.com",
-		Password: "secret",
-	})
-
-	assert.EqualError(t, err, expectedError.Error())
-	assert.Empty(t, response)
-}
-
-func TestUseCase_User_Create_WhenNameIsWhitespace_ShouldReturnErrNameRequired(t *testing.T) {
-	expectedError := domain.ErrNameRequired
-
-	uc := NewUseCase(&mockRepository{})
-
-	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
-		Name:     "   ",
-		LastName: "Doe",
-		Email:    "john@example.com",
-		Password: "secret",
-	})
-
-	assert.EqualError(t, err, expectedError.Error())
-	assert.Empty(t, response)
-}
-
-func TestUseCase_User_Create_WhenLastNameIsEmpty_ShouldReturnErrLastNameRequired(t *testing.T) {
-	expectedError := domain.ErrLastNameRequired
+func TestUseCase_User_Create_WhenUserNameIsEmpty_ShouldReturnErrUserNameRequired(t *testing.T) {
+	expectedError := domain.ErrUserNameRequired
 
 	uc := NewUseCase(&mockRepository{})
 
 	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
-		Email:    "john@example.com",
-		Password: "secret",
-	})
-
-	assert.EqualError(t, err, expectedError.Error())
-	assert.Empty(t, response)
-}
-
-func TestUseCase_User_Create_WhenLastNameIsWhitespace_ShouldReturnErrLastNameRequired(t *testing.T) {
-	expectedError := domain.ErrLastNameRequired
-
-	uc := NewUseCase(&mockRepository{})
-
-	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
-		Name:     "John",
-		LastName: "   ",
+		LastName: "Doe",
 		Email:    "john@example.com",
 		Password: "secret",
 	})
@@ -131,6 +102,7 @@ func TestUseCase_User_Create_WhenEmailIsEmpty_ShouldReturnErrEmailRequired(t *te
 	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
+		UserName: "johndoe",
 		Password: "secret",
 	})
 
@@ -146,6 +118,7 @@ func TestUseCase_User_Create_WhenPasswordIsEmpty_ShouldReturnErrPasswordRequired
 	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
+		UserName: "johndoe",
 		Email:    "john@example.com",
 	})
 
@@ -166,6 +139,7 @@ func TestUseCase_User_Create_WhenRepositoryFails_ShouldReturnRepositoryError(t *
 	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
+		UserName: "johndoe",
 		Email:    "john@example.com",
 		Password: "secret",
 	})

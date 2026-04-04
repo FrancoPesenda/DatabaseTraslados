@@ -1,4 +1,4 @@
-package create
+package createcompany
 
 import (
 	"context"
@@ -8,13 +8,15 @@ import (
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
 )
 
-type UserRepository interface {
-	CreateCompanyUser(ctx context.Context, user domain.User) (domain.User, error)
-}
+type (
+	UserRepository interface {
+		CreateCompanyUser(ctx context.Context, user domain.User) (domain.User, error)
+	}
 
-type UseCase struct {
-	repository UserRepository
-}
+	UseCase struct {
+		repository UserRepository
+	}
+)
 
 func NewUseCase(repository UserRepository) *UseCase {
 	return &UseCase{repository: repository}

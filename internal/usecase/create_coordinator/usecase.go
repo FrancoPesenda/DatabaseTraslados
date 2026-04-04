@@ -19,7 +19,7 @@ func NewUseCase(repo Repository) *UseCase {
 }
 
 func (u *UseCase) Execute(ctx context.Context, user domain.User) (domain.User, error) {
-	user.Type = "coordinator"
+	user.Role = CoordinatorRole
 
 	return u.repository.Create(ctx, user)
 }

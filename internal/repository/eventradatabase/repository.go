@@ -27,7 +27,7 @@ func (r *Repository) Create(ctx context.Context, u domain.User) (domain.User, er
 		u.LastName,
 		u.Email,
 		u.Password,
-		u.Type,
+		u.Role,
 	)
 	if err != nil {
 		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), u)

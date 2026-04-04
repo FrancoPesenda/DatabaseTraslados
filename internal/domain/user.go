@@ -9,14 +9,23 @@ var (
 	ErrPasswordRequired = errors.New("field 'password' is required")
 )
 
-type User struct {
-	ID       int
-	Name     string
-	LastName string
-	Email    string
-	Password string
-	Type: string
-}
+const (
+    CompanyRole Role = "company"
+	CoordinatorRole Role = "coordinator"
+)
+
+type (
+    Role string
+
+    User struct {
+        ID       int
+        Name     string
+        LastName string
+        Email    string
+        Password string
+		Role Role
+    }
+})
 
 func (u *User) isNameValid() bool {
 	return u.Name != ""

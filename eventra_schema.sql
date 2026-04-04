@@ -39,14 +39,19 @@ CREATE TABLE role_permission (
 
 CREATE TABLE user (
   id              INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  username        VARCHAR(100)  NOT NULL UNIQUE,
+  username        VARCHAR(100)      NULL UNIQUE,
   password        VARCHAR(255)  NOT NULL,
-  role_id         INT UNSIGNED  NOT NULL,
-  account_expiry  DATE              NULL COMMENT 'Only required for driver accounts',
+  email           VARCHAR(255)      NULL,
+  name            VARCHAR(100)      NULL,
+  last_name       VARCHAR(100)      NULL,
+  role_id         INT UNSIGNED      NULL,
+  account_expiry  DATE              NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_user_role
     FOREIGN KEY (role_id) REFERENCES role(id)
 );
+
+INSERT INTO role (name) VALUES ('admin'), ('company');
 
 -- =============================================================
 --  GEOGRAPHY

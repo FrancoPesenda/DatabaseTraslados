@@ -12,9 +12,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"
 
-	userhandler "eventra/cmd/handler/user/company/create"
-	"eventra/internal/repository/eventradatabase"
-	userCreate "eventra/internal/usecase/user/company/create"
+	userhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/create_company"
+	"github.com/FrancoPesenda/eventra/internal/repository/eventradatabase"
+	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/company/create"
 )
 
 func NewFxApp() *fx.App {
@@ -64,7 +64,7 @@ func newDB(cfg InfraConfig) (*sql.DB, error) {
 }
 
 func newEventraRepo(db *sql.DB) userCreate.UserRepository {
-	return eventradatabase.New(db)
+	return eventradatabase.NewRepository(db)
 }
 
 func newHTTPHandler(createUC *userCreate.UseCase, logger *log.Logger) http.Handler {
@@ -75,10 +75,10 @@ func newHTTPHandler(createUC *userCreate.UseCase, logger *log.Logger) http.Handl
 	return mux
 }
 
-func newHTTPServer(cfg InfraConfig, h http.Handler) *http.Server {
+func newHTTPServer(cfg InfraConfig, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:              cfg.HTTP.Addr,
-		Handler:           h,
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 }

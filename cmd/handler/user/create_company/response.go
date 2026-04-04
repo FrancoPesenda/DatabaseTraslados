@@ -1,12 +1,12 @@
 package user
 
-import domain "eventra/internal/domain"
+import domain "github.com/FrancoPesenda/eventra/internal/domain"
 
 type createResponse struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	LastName string `json:"last_name"`
-	Email    string `json:"email"`
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
 }
 
 func newCreateResponse(u domain.User) createResponse {
@@ -14,6 +14,7 @@ func newCreateResponse(u domain.User) createResponse {
 		ID:    u.ID,
 		Name:  u.Name,
 		Email: u.Email,
+		Role:  string(u.Role),
 	}
 }
 

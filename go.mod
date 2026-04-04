@@ -1,4 +1,4 @@
-module eventra
+module github.com/FrancoPesenda/eventra
 
 go 1.22
 

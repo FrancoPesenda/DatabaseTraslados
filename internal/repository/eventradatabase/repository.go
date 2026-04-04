@@ -8,47 +8,76 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
-	domain "eventra/internal/domain"
+	domain "github.com/FrancoPesenda/eventra/internal/domain"
 )
 
 type Repository struct {
 	db *sql.DB
 }
 
-func New(db *sql.DB) *Repository {
+func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
 func (r *Repository) CreateCompanyUser(ctx context.Context, user domain.User) (domain.User, error) {
+	lastID, err := r.insertNewUserCompany(ctx, user)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return r.getUserByID(ctx, lastID, user)
+}
+
+func (r *Repository) insertNewUserCompany(ctx context.Context, user domain.User) (int64, error) {
 	res, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO user (name, email, password, type)
-		 VALUES (?, ?, ?, 'company')`,
-		user.Name,
+		`INSERT INTO user (username, email, password, role_id)
+		 VALUES (?, ?, ?, (SELECT id FROM role WHERE name = ?))`,
+		user.UserName,
 		user.Email,
 		user.Password,
+		domain.CompanyRole,
 	)
 	if err != nil {
 		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), user)
-		return domain.User{}, fmt.Errorf("insert user: %w", err)
+		return 0, fmt.Errorf("insert user: %w", err)
 	}
 
 	lastID, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), user)
-		return domain.User{}, fmt.Errorf("last insert id: %w", err)
+		return 0, fmt.Errorf("last insert id: %w", err)
 	}
 
+	return lastID, nil
+}
+
+func (r *Repository) getUserByID(ctx context.Context, id int64, user domain.User) (domain.User, error) {
 	var result domain.User
-	err = r.db.QueryRowContext(
+	var roleName string
+
+	err := r.db.QueryRowContext(
 		ctx,
-		`SELECT id, name, email FROM user WHERE id = ?`,
-		lastID,
-	).Scan(&result.ID, &result.Name, &result.Email)
+		`SELECT u.id, u.username, u.email, r.name
+		 FROM user u
+		 LEFT JOIN role r ON r.id = u.role_id
+		 WHERE u.id = ?`,
+		id,
+	).Scan(&result.ID, &result.Name, &result.Email, &roleName)
 	if err != nil {
 		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), user)
 		return domain.User{}, fmt.Errorf("select user by id: %w", err)
 	}
 
+	result.Role = toRole(roleName)
 	return result, nil
+}
+
+func toRole(name string) domain.Role {
+	switch domain.Role(name) {
+	case domain.CompanyRole:
+		return domain.CompanyRole
+	default:
+		return domain.Role(name)
+	}
 }

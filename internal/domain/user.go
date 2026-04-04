@@ -5,17 +5,29 @@ import "errors"
 var (
 	ErrNameRequired     = errors.New("field 'name' is required")
 	ErrLastNameRequired = errors.New("field 'last_name' is required")
+	ErrUserNameRequired = errors.New("field 'user_name' is required")
 	ErrEmailRequired    = errors.New("field 'email' is required")
 	ErrPasswordRequired = errors.New("field 'password' is required")
 )
 
-type User struct {
-	ID       int
-	Name     string
-	LastName string
-	Email    string
-	Password string
-}
+const (
+	CompanyRole Role = "company"
+	DefaultRole Role = "default"
+)
+
+type (
+	Role string
+
+	User struct {
+		ID       int
+		Name     string
+		LastName string
+		UserName string
+		Email    string
+		Password string
+		Role     Role
+	}
+)
 
 func (u *User) IsNameValid() bool {
 	return u.Name != ""
@@ -23,6 +35,10 @@ func (u *User) IsNameValid() bool {
 
 func (u *User) IsLastNameValid() bool {
 	return u.LastName != ""
+}
+
+func (u *User) IsUserNameValid() bool {
+	return u.UserName != ""
 }
 
 func (u *User) IsEmailValid() bool {

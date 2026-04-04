@@ -1,16 +1,16 @@
 package user
 
-import domain "eventra/internal/domain"
+import domain "github.com/FrancoPesenda/eventra/internal/domain"
 
 type request struct {
-	Name     string `json:"name"`
+	UserName string `json:"user_name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 func (r *request) toDomain() domain.User {
 	return domain.User{
-		Name:     r.Name,
+		UserName: r.UserName,
 		Email:    r.Email,
 		Password: r.Password,
 	}

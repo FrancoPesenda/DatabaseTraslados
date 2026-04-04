@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	domain "eventra/internal/domain"
+	domain "github.com/FrancoPesenda/eventra/internal/domain"
 )
 
 type UserRepository interface {
@@ -16,8 +16,8 @@ type UseCase struct {
 	repository UserRepository
 }
 
-func NewUseCase(repo UserRepository) *UseCase {
-	return &UseCase{repository: repo}
+func NewUseCase(repository UserRepository) *UseCase {
+	return &UseCase{repository: repository}
 }
 
 func (u *UseCase) CreateCompanyUser(ctx context.Context, user domain.User) (domain.User, error) {
@@ -27,6 +27,8 @@ func (u *UseCase) CreateCompanyUser(ctx context.Context, user domain.User) (doma
 		log.Printf("[Layer:UseCase][error_message:%s][request_body:%+v]", err.Error(), user)
 		return domain.User{}, err
 	}
+
+	setCompanyRole(&user)
 
 	result, err := u.repository.CreateCompanyUser(ctx, user)
 	if err != nil {
@@ -38,15 +40,21 @@ func (u *UseCase) CreateCompanyUser(ctx context.Context, user domain.User) (doma
 }
 
 func validateUser(user domain.User) error {
-	if !user.IsNameValid() {
-		return domain.ErrNameRequired
+	if !user.IsUserNameValid() {
+		return domain.ErrUserNameRequired
 	}
+
 	if !user.IsEmailValid() {
 		return domain.ErrEmailRequired
 	}
+
 	if !user.IsPasswordValid() {
 		return domain.ErrPasswordRequired
 	}
 
 	return nil
+}
+
+func setCompanyRole(user *domain.User) {
+	user.Role = domain.CompanyRole
 }

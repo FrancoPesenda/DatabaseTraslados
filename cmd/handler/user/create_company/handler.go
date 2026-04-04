@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	domain "eventra/internal/domain"
-	userCreate "eventra/internal/usecase/user/company/create"
+	domain "github.com/FrancoPesenda/eventra/internal/domain"
+	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/company/create"
 )
 
 type CreateHandler struct {
@@ -47,7 +47,6 @@ func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
 func processError(w http.ResponseWriter, err error) {
 	switch err {
 	case domain.ErrNameRequired,
-		domain.ErrLastNameRequired,
 		domain.ErrEmailRequired,
 		domain.ErrPasswordRequired:
 		writeError(w, http.StatusBadRequest, fmt.Sprintf("Bad Request error: %s", err.Error()))

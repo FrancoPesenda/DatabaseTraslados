@@ -14,7 +14,7 @@ type mockRepository struct {
 	createFn func(ctx context.Context, user domain.User) (domain.User, error)
 }
 
-func (m *mockRepository) Create(ctx context.Context, user domain.User) (domain.User, error) {
+func (m *mockRepository) CreateCompanyUser(ctx context.Context, user domain.User) (domain.User, error) {
 	return m.createFn(ctx, user)
 }
 
@@ -29,7 +29,7 @@ func TestUseCase_User_Create_WhenValidInput_ShouldReturnCreatedUser(t *testing.T
 	}
 	uc := NewUseCase(repo)
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
 		Email:    "john@example.com",
@@ -50,7 +50,7 @@ func TestUseCase_User_Create_WhenNameHasWhitespace_ShouldTrimAndSucceed(t *testi
 	}
 	uc := NewUseCase(repo)
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "  John  ",
 		LastName: "  Doe  ",
 		Email:    "john@example.com",
@@ -66,7 +66,7 @@ func TestUseCase_User_Create_WhenNameIsEmpty_ShouldReturnErrNameRequired(t *test
 
 	uc := NewUseCase(&mockRepository{})
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		LastName: "Doe",
 		Email:    "john@example.com",
 		Password: "secret",
@@ -81,7 +81,7 @@ func TestUseCase_User_Create_WhenNameIsWhitespace_ShouldReturnErrNameRequired(t 
 
 	uc := NewUseCase(&mockRepository{})
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "   ",
 		LastName: "Doe",
 		Email:    "john@example.com",
@@ -97,7 +97,7 @@ func TestUseCase_User_Create_WhenLastNameIsEmpty_ShouldReturnErrLastNameRequired
 
 	uc := NewUseCase(&mockRepository{})
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		Email:    "john@example.com",
 		Password: "secret",
@@ -112,7 +112,7 @@ func TestUseCase_User_Create_WhenLastNameIsWhitespace_ShouldReturnErrLastNameReq
 
 	uc := NewUseCase(&mockRepository{})
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "   ",
 		Email:    "john@example.com",
@@ -128,7 +128,7 @@ func TestUseCase_User_Create_WhenEmailIsEmpty_ShouldReturnErrEmailRequired(t *te
 
 	uc := NewUseCase(&mockRepository{})
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
 		Password: "secret",
@@ -143,7 +143,7 @@ func TestUseCase_User_Create_WhenPasswordIsEmpty_ShouldReturnErrPasswordRequired
 
 	uc := NewUseCase(&mockRepository{})
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
 		Email:    "john@example.com",
@@ -163,7 +163,7 @@ func TestUseCase_User_Create_WhenRepositoryFails_ShouldReturnRepositoryError(t *
 	}
 	uc := NewUseCase(repo)
 
-	response, err := uc.Execute(context.Background(), domain.User{
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
 		Name:     "John",
 		LastName: "Doe",
 		Email:    "john@example.com",

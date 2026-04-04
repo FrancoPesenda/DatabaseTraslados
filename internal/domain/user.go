@@ -17,34 +17,18 @@ type User struct {
 	Password string
 }
 
-func (u *User) isNameValid() bool {
+func (u *User) IsNameValid() bool {
 	return u.Name != ""
 }
 
-func (u *User) isLastNameValid() bool {
+func (u *User) IsLastNameValid() bool {
 	return u.LastName != ""
 }
 
-func (u *User) isEmailValid() bool {
+func (u *User) IsEmailValid() bool {
 	return u.Email != ""
 }
 
-func (u *User) isPasswordValid() bool {
+func (u *User) IsPasswordValid() bool {
 	return u.Password != ""
-}
-
-func (u *User) Validate() error {
-	if !u.isNameValid() {
-		return ErrNameRequired
-	}
-	if !u.isLastNameValid() {
-		return ErrLastNameRequired
-	}
-	if !u.isEmailValid() {
-		return ErrEmailRequired
-	}
-	if !u.isPasswordValid() {
-		return ErrPasswordRequired
-	}
-	return nil
 }

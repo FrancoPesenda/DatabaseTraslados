@@ -11,10 +11,9 @@ type createResponse struct {
 
 func newCreateResponse(u domain.User) createResponse {
 	return createResponse{
-		ID:       u.ID,
-		Name:     u.Name,
-		LastName: u.LastName,
-		Email:    u.Email,
+		ID:    u.ID,
+		Name:  u.Name,
+		Email: u.Email,
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	domain "eventra/internal/domain"
-	userCreate "eventra/internal/usecase/user/create"
+	userCreate "eventra/internal/usecase/user/company/create"
 )
 
 type CreateHandler struct {
@@ -23,7 +23,7 @@ func NewCreateHandler(usecase *userCreate.UseCase, logger *log.Logger) *CreateHa
 }
 
 func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	var req createRequest
+	var req request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Printf("[Layer:Handler][error_message:%s][request_body:%+v]", err.Error(), req)
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -32,7 +32,7 @@ func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Printf("Incoming Request: %+v", req)
 
-	out, err := h.usecase.Execute(r.Context(), req.toDomain())
+	out, err := h.usecase.CreateCompanyUser(r.Context(), req.toDomain())
 	if err != nil {
 		h.logger.Printf("[Layer:Handler][error_message:%s][request_body:%+v]", err.Error(), req)
 		processError(w, err)

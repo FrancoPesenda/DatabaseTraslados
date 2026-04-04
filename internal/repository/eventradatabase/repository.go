@@ -22,11 +22,12 @@ func (r *Repository) Create(ctx context.Context, u domain.User) (domain.User, er
 	res, err := r.db.ExecContext(
 		ctx,
 		`INSERT INTO user (name, last_name, email, password, type)
-		 VALUES (?, ?, ?, ?, 'admin')`,
+		 VALUES (?, ?, ?, ?, ?)`,
 		u.Name,
 		u.LastName,
 		u.Email,
 		u.Password,
+		u.Type,
 	)
 	if err != nil {
 		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), u)

@@ -1,5 +1,7 @@
 package main
 
+
+
 import (
 	"context"
 	"database/sql"
@@ -9,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	createCoordinator "eventra/internal/usecase/user/create_coordinator"
 	userhandler "eventra/cmd/handler/user"
 	"eventra/internal/repository/eventradatabase"
 	userCreate "eventra/internal/usecase/user/create"
@@ -25,6 +28,7 @@ func NewFxApp() *fx.App {
 			newDB,
 			newEventraRepo,
 			userCreate.NewUseCase,
+			createCoordinator.NewUseCase, //added
 			newHTTPHandler,
 			newHTTPServer,
 		),
@@ -72,6 +76,9 @@ func newHTTPHandler(createUC *userCreate.UseCase, logger *log.Logger) http.Handl
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /users", usersH.Handle)
+
+	coordH := userhandler.NewCreateHandler(createCoordinatorUC, logger)
+	mux.HandleFunc("POST /coordinators", coordH.Handle)
 	return mux
 }
 

@@ -24,6 +24,8 @@ func (u *UseCase) Execute(ctx context.Context, user domain.User) (domain.User, e
 	user.Name = strings.TrimSpace(user.Name)
 	user.LastName = strings.TrimSpace(user.LastName)
 
+	user.Type= "user"
+
 	if err := user.Validate(); err != nil {
 		log.Printf("[Layer:UseCase][error_message:%s][request_body:%+v]", err.Error(), user)
 		return domain.User{}, err

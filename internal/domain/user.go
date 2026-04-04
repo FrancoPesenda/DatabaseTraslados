@@ -15,6 +15,7 @@ type User struct {
 	LastName string
 	Email    string
 	Password string
+	Type: string
 }
 
 func (u *User) isNameValid() bool {

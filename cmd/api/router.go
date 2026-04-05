@@ -3,13 +3,15 @@ package main
 import (
 	"net/http"
 
-	userhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/createcompany"
+	createcompanyhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/createcompany"
+	loginhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/login"
 )
 
-func newHTTPMux(createHandler *userhandler.CreateHandler) http.Handler {
+func newHTTPMux(createHandler *createcompanyhandler.CreateHandler, loginHandler *loginhandler.Handler) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /user/company", createHandler.Handle)
+	mux.HandleFunc("POST /user/login", loginHandler.Login)
 
 	mux.HandleFunc("GET /ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

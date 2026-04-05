@@ -3,10 +3,11 @@ package createcompany
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
-
+	"github.com/FrancoPesenda/eventra/internal/utils/security"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,14 +26,19 @@ func TestUseCase_User_Create_WhenValidInput_ShouldReturnCreatedUser(t *testing.T
 		LastName: "Doe",
 		UserName: "johndoe",
 		Email:    "john@example.com",
-		Password: "secret",
 		Role:     domain.CompanyRole,
 	}
 
 	repo := &mockRepository{
 		createFn: func(_ context.Context, user domain.User) (domain.User, error) {
-			user.ID = 1
-			return user, nil
+			return domain.User{
+				ID:       1,
+				Name:     user.Name,
+				LastName: user.LastName,
+				UserName: user.UserName,
+				Email:    user.Email,
+				Role:     user.Role,
+			}, nil
 		},
 	}
 	uc := NewUseCase(repo)
@@ -55,13 +61,18 @@ func TestUseCase_User_Create_WhenNameHasWhitespace_ShouldTrimAndSucceed(t *testi
 		LastName: "Doe",
 		UserName: "johndoe",
 		Email:    "john@example.com",
-		Password: "secret",
 		Role:     domain.CompanyRole,
 	}
 
 	repo := &mockRepository{
 		createFn: func(_ context.Context, user domain.User) (domain.User, error) {
-			return user, nil
+			return domain.User{
+				Name:     user.Name,
+				LastName: user.LastName,
+				UserName: user.UserName,
+				Email:    user.Email,
+				Role:     user.Role,
+			}, nil
 		},
 	}
 	uc := NewUseCase(repo)
@@ -76,6 +87,28 @@ func TestUseCase_User_Create_WhenNameHasWhitespace_ShouldTrimAndSucceed(t *testi
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedResponse, response)
+}
+
+func TestUseCase_User_Create_WhenValidInput_ShouldHashPassword(t *testing.T) {
+	var receivedPassword string
+
+	repo := &mockRepository{
+		createFn: func(_ context.Context, user domain.User) (domain.User, error) {
+			receivedPassword = user.Password
+			return domain.User{}, nil
+		},
+	}
+	uc := NewUseCase(repo)
+
+	_, _ = uc.CreateCompanyUser(context.Background(), domain.User{
+		Name:     "John",
+		LastName: "Doe",
+		UserName: "johndoe",
+		Email:    "john@example.com",
+		Password: "secret",
+	})
+
+	assert.Nil(t, security.CheckPassword(receivedPassword, "secret"))
 }
 
 func TestUseCase_User_Create_WhenUserNameIsEmpty_ShouldReturnErrUserNameRequired(t *testing.T) {
@@ -123,6 +156,21 @@ func TestUseCase_User_Create_WhenPasswordIsEmpty_ShouldReturnErrPasswordRequired
 	})
 
 	assert.EqualError(t, err, expectedError.Error())
+	assert.Empty(t, response)
+}
+
+func TestUseCase_User_Create_WhenPasswordExceedsBcryptLimit_ShouldReturnError(t *testing.T) {
+	uc := NewUseCase(&mockRepository{})
+
+	response, err := uc.CreateCompanyUser(context.Background(), domain.User{
+		Name:     "John",
+		LastName: "Doe",
+		UserName: "johndoe",
+		Email:    "john@example.com",
+		Password: strings.Repeat("a", 73),
+	})
+
+	assert.Error(t, err)
 	assert.Empty(t, response)
 }
 

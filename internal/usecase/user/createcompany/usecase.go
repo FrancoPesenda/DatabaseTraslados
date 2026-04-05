@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
+	"github.com/FrancoPesenda/eventra/internal/utils/security"
 )
 
 type (
@@ -31,6 +32,13 @@ func (u *UseCase) CreateCompanyUser(ctx context.Context, user domain.User) (doma
 	}
 
 	setCompanyRole(&user)
+
+	hashed, err := security.HashPassword(user.Password)
+	if err != nil {
+		log.Printf("[Layer:UseCase][error_message:%s][request_body:%+v]", err.Error(), user)
+		return domain.User{}, err
+	}
+	user.Password = hashed
 
 	result, err := u.repository.CreateCompanyUser(ctx, user)
 	if err != nil {

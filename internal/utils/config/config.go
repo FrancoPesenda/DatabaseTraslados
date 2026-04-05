@@ -19,10 +19,11 @@ type HTTPConfig struct {
 }
 
 type MySQLConfig struct {
-	DSN             string `json:"dsn"`
-	MaxOpenConns    int    `json:"max_open_conns"`
-	MaxIdleConns    int    `json:"max_idle_conns"`
-	ConnMaxLifetime string `json:"conn_max_lifetime"`
+	DSN              string `json:"dsn"`
+	MaxOpenConns     int    `json:"max_open_conns"`
+	MaxIdleConns     int    `json:"max_idle_conns"`
+	ConnMaxLifetime  string `json:"conn_max_lifetime"`
+	ConnMaxIdleTime  string `json:"conn_max_idle_time"`
 }
 
 type LoadConfigOptions struct {
@@ -69,6 +70,9 @@ func LoadInfraConfig(opts LoadConfigOptions) (InfraConfig, error) {
 	if v := os.Getenv("MYSQL_CONN_MAX_LIFETIME"); v != "" {
 		cfg.MySQL.ConnMaxLifetime = v
 	}
+	if v := os.Getenv("MYSQL_CONN_MAX_IDLE_TIME"); v != "" {
+		cfg.MySQL.ConnMaxIdleTime = v
+	}
 
 	if cfg.HTTP.Addr == "" {
 		cfg.HTTP.Addr = ":8080"
@@ -84,6 +88,9 @@ func LoadInfraConfig(opts LoadConfigOptions) (InfraConfig, error) {
 	}
 	if cfg.MySQL.ConnMaxLifetime == "" {
 		cfg.MySQL.ConnMaxLifetime = "5m"
+	}
+	if cfg.MySQL.ConnMaxIdleTime == "" {
+		cfg.MySQL.ConnMaxIdleTime = "5m"
 	}
 
 	return cfg, nil

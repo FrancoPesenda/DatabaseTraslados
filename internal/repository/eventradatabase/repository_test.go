@@ -97,6 +97,96 @@ func TestRepository_CreateCompanyUser_WhenLastInsertIDFails_ShouldReturnError(t 
 	assert.Nil(t, mock.ExpectationsWereMet())
 }
 
+func TestRepository_GetUserByUserName_WhenUserExists_ShouldReturnUser(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer db.Close()
+
+	expectedResponse := domain.User{
+		ID:       1,
+		UserName: "johndoe",
+		Email:    "john@example.com",
+		Password: "hashed_secret",
+		Role:     domain.CompanyRole,
+	}
+
+	mock.ExpectQuery("SELECT u.id").
+		WithArgs("johndoe").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "name"}).
+			AddRow(1, "johndoe", "john@example.com", "hashed_secret", "company"))
+
+	repo := NewRepository(db)
+	response, err := repo.GetUserByUserName(context.Background(), "johndoe")
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedResponse, response)
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
+func TestRepository_GetUserByUserName_WhenUserNotFound_ShouldReturnError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer db.Close()
+
+	expectedError := errors.New("select user by username: sql: no rows in result set")
+
+	mock.ExpectQuery("SELECT u.id").
+		WithArgs("johndoe").
+		WillReturnError(errors.New("sql: no rows in result set"))
+
+	repo := NewRepository(db)
+	response, err := repo.GetUserByUserName(context.Background(), "johndoe")
+
+	assert.EqualError(t, err, expectedError.Error())
+	assert.Empty(t, response)
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
+func TestRepository_GetUserByEmail_WhenUserExists_ShouldReturnUser(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer db.Close()
+
+	expectedResponse := domain.User{
+		ID:       1,
+		UserName: "johndoe",
+		Email:    "john@example.com",
+		Password: "hashed_secret",
+		Role:     domain.CompanyRole,
+	}
+
+	mock.ExpectQuery("SELECT u.id").
+		WithArgs("john@example.com").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "name"}).
+			AddRow(1, "johndoe", "john@example.com", "hashed_secret", "company"))
+
+	repo := NewRepository(db)
+	response, err := repo.GetUserByEmail(context.Background(), "john@example.com")
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedResponse, response)
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
+func TestRepository_GetUserByEmail_WhenUserNotFound_ShouldReturnError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer db.Close()
+
+	expectedError := errors.New("select user by email: sql: no rows in result set")
+
+	mock.ExpectQuery("SELECT u.id").
+		WithArgs("john@example.com").
+		WillReturnError(errors.New("sql: no rows in result set"))
+
+	repo := NewRepository(db)
+	response, err := repo.GetUserByEmail(context.Background(), "john@example.com")
+
+	assert.EqualError(t, err, expectedError.Error())
+	assert.Empty(t, response)
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
 func TestRepository_CreateCompanyUser_WhenSelectFails_ShouldReturnError(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.Nil(t, err)

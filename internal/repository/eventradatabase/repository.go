@@ -73,6 +73,48 @@ func (r *Repository) getUserByID(ctx context.Context, id int64, user domain.User
 	return result, nil
 }
 
+func (r *Repository) GetUserByUserName(ctx context.Context, userName string) (domain.User, error) {
+	var result domain.User
+	var roleName string
+
+	err := r.db.QueryRowContext(
+		ctx,
+		`SELECT u.id, u.username, u.email, u.password, r.name
+		 FROM user u
+		 LEFT JOIN role r ON r.id = u.role_id
+		 WHERE u.username = ?`,
+		userName,
+	).Scan(&result.ID, &result.UserName, &result.Email, &result.Password, &roleName)
+	if err != nil {
+		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), userName)
+		return domain.User{}, fmt.Errorf("select user by username: %w", err)
+	}
+
+	result.Role = toRole(roleName)
+	return result, nil
+}
+
+func (r *Repository) GetUserByEmail(ctx context.Context, email string) (domain.User, error) {
+	var result domain.User
+	var roleName string
+
+	err := r.db.QueryRowContext(
+		ctx,
+		`SELECT u.id, u.username, u.email, u.password, r.name
+		 FROM user u
+		 LEFT JOIN role r ON r.id = u.role_id
+		 WHERE u.email = ?`,
+		email,
+	).Scan(&result.ID, &result.UserName, &result.Email, &result.Password, &roleName)
+	if err != nil {
+		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), email)
+		return domain.User{}, fmt.Errorf("select user by email: %w", err)
+	}
+
+	result.Role = toRole(roleName)
+	return result, nil
+}
+
 func toRole(name string) domain.Role {
 	switch domain.Role(name) {
 	case domain.CompanyRole:

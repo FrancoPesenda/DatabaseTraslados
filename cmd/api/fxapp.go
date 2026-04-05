@@ -12,10 +12,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"
 
-	userhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/createcompany"
-	"github.com/FrancoPesenda/eventra/internal/config"
+	createcompanyhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/createcompany"
+	loginhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/login"
 	"github.com/FrancoPesenda/eventra/internal/repository/eventradatabase"
-	userCreate "github.com/FrancoPesenda/eventra/internal/usecase/user/createcompany"
+	"github.com/FrancoPesenda/eventra/internal/usecase/user/createcompany"
+	"github.com/FrancoPesenda/eventra/internal/usecase/user/login"
+	"github.com/FrancoPesenda/eventra/internal/utils/config"
 )
 
 func NewFxApp() *fx.App {
@@ -24,15 +26,19 @@ func NewFxApp() *fx.App {
 			newLogger,
 			newInfraConfig,
 			newDB,
+			eventradatabase.NewRepository,
+			func(r *eventradatabase.Repository) createcompany.UserRepository { return r },
+			func(r *eventradatabase.Repository) login.UserRepository { return r },
 			fx.Annotate(
-				eventradatabase.NewRepository,
-				fx.As(new(userCreate.UserRepository)),
+				createcompany.NewUseCase,
+				fx.As(new(createcompanyhandler.UseCase)),
 			),
+			createcompanyhandler.NewCreateHandler,
 			fx.Annotate(
-				userCreate.NewUseCase,
-				fx.As(new(userhandler.UseCase)),
+				login.NewUseCase,
+				fx.As(new(loginhandler.UseCase)),
 			),
-			userhandler.NewCreateHandler,
+			loginhandler.NewHandler,
 			newHTTPMux,
 			newHTTPServer,
 		),
@@ -62,6 +68,13 @@ func newDB(cfg config.InfraConfig) (*sql.DB, error) {
 		return nil, fmt.Errorf("invalid MYSQL_CONN_MAX_LIFETIME: %w", err)
 	}
 	db.SetConnMaxLifetime(d)
+
+	idleTime, err := time.ParseDuration(cfg.MySQL.ConnMaxIdleTime)
+	if err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("invalid MYSQL_CONN_MAX_IDLE_TIME: %w", err)
+	}
+	db.SetConnMaxIdleTime(idleTime)
 
 	if err := db.Ping(); err != nil {
 		_ = db.Close()

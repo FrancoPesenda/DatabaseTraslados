@@ -55,6 +55,59 @@ paths:
         "500":
           description: Internal server error
 
+  /user/login:
+    post:
+      summary: Login
+      description: Autentica un usuario por user_name o email junto con su password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            examples:
+              by_username:
+                summary: Login por user_name
+                value:
+                  user_name: john_doe
+                  password: secret123
+              by_email:
+                summary: Login por email
+                value:
+                  email: john@example.com
+                  password: secret123
+      responses:
+        "200":
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Faltan campos obligatorios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                credentials_required:
+                  value:
+                    error: "field 'user_name' is required"
+                password_required:
+                  value:
+                    error: "field 'password' is required"
+        "401":
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                value:
+                  error: "invalid credentials"
+        "500":
+          description: Internal server error
+
 components:
   schemas:
     CreateCompanyUserRequest:
@@ -83,6 +136,39 @@ components:
           type: integer
           example: 1
         name:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          example: john@example.com
+        role:
+          type: string
+          example: company
+
+    LoginRequest:
+      type: object
+      required:
+        - password
+      properties:
+        user_name:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: secret123
+
+    LoginResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_name:
           type: string
           example: john_doe
         email:

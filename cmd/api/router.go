@@ -11,5 +11,10 @@ func newHTTPMux(createHandler *userhandler.CreateHandler) http.Handler {
 
 	mux.HandleFunc("POST /user/company", createHandler.Handle)
 
+	mux.HandleFunc("GET /ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("pong"))
+	})
+
 	return mux
 }

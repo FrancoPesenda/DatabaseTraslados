@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: Eventra API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local
+
+paths:
+  /ping:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: API is up
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: pong
+
+  /user/company:
+    post:
+      summary: Create company user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompanyUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCompanyUserResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                username_required:
+                  value:
+                    error: "Bad Request error: field 'user_name' is required"
+                email_required:
+                  value:
+                    error: "Bad Request error: field 'email' is required"
+                password_required:
+                  value:
+                    error: "Bad Request error: field 'password' is required"
+        "500":
+          description: Internal server error
+
+components:
+  schemas:
+    CreateCompanyUserRequest:
+      type: object
+      required:
+        - user_name
+        - email
+        - password
+      properties:
+        user_name:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: secret123
+
+    CreateCompanyUserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: john_doe
+        email:
+          type: string
+          example: john@example.com
+        role:
+          type: string
+          example: company
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

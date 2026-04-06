@@ -1,22 +1,120 @@
-# Arquitectura (DDD + Clean)
+# Arquitectura
 
-## Capas
+## Estructura de capas (DDD + Clean Architecture)
 
-- **Domain (`internal/domain/`)**: entidades y reglas del negocio. Solo depende de Go (stdlib).
-- **Application (`internal/application/`)**: casos de uso (orquesta el dominio). Depende de `domain`.
-- **Infrastructure (`internal/infrastructure/`)**: DB MySQL, repositorios concretos, proveedores externos.
-- **Interfaces (`internal/interfaces/`)**: HTTP handlers, rutas, middlewares (entrada/salida).
+```
+cmd/
+├── api/                        → Entry point: DI (Uber FX), HTTP server, router
+└── handler/
+    └── user/
+        ├── createcompany/      → Handler: crear usuario company
+        └── login/              → Handler: autenticar usuario
+
+internal/
+├── domain/
+│   └── user.go                 → Entidad User, roles, errores de dominio, validaciones
+├── usecase/
+│   └── user/
+│       ├── createcompany/      → Lógica: validar, asignar rol, persistir
+│       └── login/              → Lógica: validar credenciales, verificar password (bcrypt)
+├── repository/
+│   └── eventradatabase/        → Acceso a MySQL: INSERT, SELECT by ID, SELECT by username/email
+├── utils/
+│   ├── security/               → HashPassword / CheckPassword (bcrypt)
+│   └── config/                 → Configuración por env vars o archivo JSON
+```
+
+## Flujo de una request — CreateCompanyUser
+
+```
+POST /user/company
+    │
+    ▼
+Handler (createcompany)
+    │  decode JSON → domain.User
+    ▼
+UseCase (createcompany)
+    │  TrimSpace(name)
+    │  validar user_name, email, password
+    │  setRole(company)
+    ▼
+Repository (eventradatabase)
+    │  INSERT INTO user
+    │  SELECT user by id
+    ▼
+MySQL
+    │
+    ▼
+UseCase → Handler → 201 Created { id, name, email, role }
+```
+
+## Flujo de una request — Login
+
+```
+POST /user/login
+    │
+    ▼
+Handler (login)
+    │  decode JSON → domain.User
+    ▼
+UseCase (login)
+    │  validar: user_name o email + password
+    │  GetUserByUserName o GetUserByEmail
+    │  CheckPassword(storedHash, plainPassword)
+    │  limpiar password del resultado
+    ▼
+Repository (eventradatabase)
+    │  SELECT user WHERE username = ? / email = ?
+    ▼
+MySQL
+    │
+    ▼
+UseCase → Handler → 200 OK { id, user_name, email, role }
+                  → 401 Unauthorized si credenciales inválidas
+```
 
 ## Regla de dependencias
 
-Las dependencias deben apuntar hacia adentro:
+```
+Handler → UseCase → Repository → Domain
+   │          │                     ↑
+   │          └── utils/security    │
+   │                                │
+   └── (nunca importa domain directamente salvo para errores)
+```
 
-`interfaces` → `application` → `domain`
+- El dominio no importa ningún paquete externo.
+- Las interfaces se definen donde se usan.
+- El mapeo entre capas lo hace siempre la capa exterior (`toDomain()` en request, `NewResponse()` desde dominio).
 
-`infrastructure` implementa contratos definidos hacia adentro (normalmente interfaces en `domain` o `application`).
+## Inyección de dependencias (Uber FX)
 
-## Convenciones de paquetes
+```
+*sql.DB
+    └── *Repository
+            ├── (como createcompany.UserRepository) → *createcompany.UseCase → *CreateHandler
+            └── (como login.UserRepository)         → *login.UseCase        → *login.Handler
+                                                                                      │
+                                                                               http.Handler
+                                                                                      │
+                                                                               *http.Server
+```
 
-- 1 carpeta por dominio: `user`, `service`, `service_type`, `event`, `payment_method`.
-- Los IDs se tipan (no `string` suelto) para evitar mezclar identificadores.
+## Infraestructura local
 
+```
+Docker Compose
+├── db   → MySQL 8.0 en puerto 3307 (host) / 3306 (interno)
+└── api  → Go API en puerto 8080, restart: on-failure
+
+Cloudflare Tunnel → expone localhost:8080 a internet (URL pública temporal)
+```
+
+## Scripts disponibles
+
+| Script | Descripción |
+|--------|-------------|
+| `bash scripts/start.sh` | Levanta Docker + cloudflared |
+| `bash scripts/stop.sh` | Baja todos los contenedores |
+| `bash scripts/reload.sh` | Reconstruye todo desde cero (borra datos) |
+| `bash scripts/logs.sh` | Logs en tiempo real de la API |

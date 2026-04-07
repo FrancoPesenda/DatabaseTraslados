@@ -9,9 +9,11 @@ var (
 	ErrEmailRequired      = errors.New("field 'email' is required")
 	ErrPasswordRequired   = errors.New("field 'password' is required")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrAdminRequired      = errors.New("admin role required")
 )
 
 const (
+	AdminRole   Role = "admin"
 	CompanyRole Role = "company"
 	DefaultRole Role = "default"
 )

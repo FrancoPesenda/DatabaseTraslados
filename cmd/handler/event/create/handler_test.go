@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -28,12 +29,13 @@ func newTestHandler(uc UseCase) *CreateHandler {
 
 func TestHandler_CreateEvent_WhenValidRequest_ShouldReturn201WithBody(t *testing.T) {
 	reqBody := request{
-		AdminUserName: "admin",
-		AdminPassword: "secret",
-		Name:          "Festival",
-		LocationID:    1,
-		StartDate:     "2026-08-01",
-		EndDate:       "2026-08-03",
+		UserName:   "admin",
+		Password:   "secret",
+		Role:       string(domain.AdminRole),
+		Name:       "Festival",
+		LocationID: 1,
+		StartDate:  "2026-08-01",
+		EndDate:    "2026-08-03",
 	}
 	body, _ := json.Marshal(reqBody)
 
@@ -64,6 +66,64 @@ func TestHandler_CreateEvent_WhenInvalidJSON_ShouldReturn400(t *testing.T) {
 	newTestHandler(&mockUseCase{}).Handle(w, r)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response errorResponse
+	assert.NoError(t, json.NewDecoder(w.Body).Decode(&response))
+	assert.Equal(t, "invalid request body", response.Error)
+}
+
+func TestHandler_CreateEvent_WhenInvalidEventName_ShouldReturn400(t *testing.T) {
+	uc := &mockUseCase{
+		createEventFn: func(_ context.Context, _ domain.User, _ domain.Event) (domain.Event, error) {
+			return domain.Event{}, domain.ErrEventNameRequired
+		},
+	}
+
+	r := httptest.NewRequest(http.MethodPost, "/event", bytes.NewReader(mustJSON(t, request{
+		UserName:   "admin",
+		Password:   "secret",
+		Role:       string(domain.AdminRole),
+		Name:       "",
+		LocationID: 1,
+		StartDate:  "2026-08-01",
+		EndDate:    "2026-08-03",
+	})))
+	w := httptest.NewRecorder()
+
+	newTestHandler(uc).Handle(w, r)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response errorResponse
+	assert.NoError(t, json.NewDecoder(w.Body).Decode(&response))
+	assert.Equal(t, "Bad Request error: "+domain.ErrEventNameRequired.Error(), response.Error)
+}
+
+func TestHandler_CreateEvent_WhenInvalidCredentials_ShouldReturn401(t *testing.T) {
+	uc := &mockUseCase{
+		createEventFn: func(_ context.Context, _ domain.User, _ domain.Event) (domain.Event, error) {
+			return domain.Event{}, domain.ErrInvalidCredentials
+		},
+	}
+
+	r := httptest.NewRequest(http.MethodPost, "/event", bytes.NewReader(mustJSON(t, request{
+		UserName:   "admin",
+		Password:   "wrong",
+		Role:       string(domain.AdminRole),
+		Name:       "Festival",
+		LocationID: 1,
+		StartDate:  "2026-08-01",
+		EndDate:    "2026-08-03",
+	})))
+	w := httptest.NewRecorder()
+
+	newTestHandler(uc).Handle(w, r)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+	var response errorResponse
+	assert.NoError(t, json.NewDecoder(w.Body).Decode(&response))
+	assert.Equal(t, domain.ErrInvalidCredentials.Error(), response.Error)
 }
 
 func TestHandler_CreateEvent_WhenAdminNotAuthorized_ShouldReturn403(t *testing.T) {
@@ -73,20 +133,53 @@ func TestHandler_CreateEvent_WhenAdminNotAuthorized_ShouldReturn403(t *testing.T
 		},
 	}
 
-	reqBody := request{
-		AdminUserName: "admin",
-		AdminPassword: "secret",
-		Name:          "Festival",
-		LocationID:    1,
-		StartDate:     "2026-08-01",
-		EndDate:       "2026-08-03",
-	}
-	body, _ := json.Marshal(reqBody)
-
-	r := httptest.NewRequest(http.MethodPost, "/event", bytes.NewReader(body))
+	r := httptest.NewRequest(http.MethodPost, "/event", bytes.NewReader(mustJSON(t, request{
+		UserName:   "admin",
+		Password:   "secret",
+		Role:       string(domain.AdminRole),
+		Name:       "Festival",
+		LocationID: 1,
+		StartDate:  "2026-08-01",
+		EndDate:    "2026-08-03",
+	})))
 	w := httptest.NewRecorder()
 
 	newTestHandler(uc).Handle(w, r)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
+
+	var response errorResponse
+	assert.NoError(t, json.NewDecoder(w.Body).Decode(&response))
+	assert.Equal(t, domain.ErrAdminRequired.Error(), response.Error)
+}
+
+func TestHandler_CreateEvent_WhenUnexpectedError_ShouldReturn500(t *testing.T) {
+	uc := &mockUseCase{
+		createEventFn: func(_ context.Context, _ domain.User, _ domain.Event) (domain.Event, error) {
+			return domain.Event{}, errors.New("repository failure")
+		},
+	}
+
+	r := httptest.NewRequest(http.MethodPost, "/event", bytes.NewReader(mustJSON(t, request{
+		UserName:   "admin",
+		Password:   "secret",
+		Role:       string(domain.AdminRole),
+		Name:       "Festival",
+		LocationID: 1,
+		StartDate:  "2026-08-01",
+		EndDate:    "2026-08-03",
+	})))
+	w := httptest.NewRecorder()
+
+	newTestHandler(uc).Handle(w, r)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func mustJSON(t *testing.T, v interface{}) []byte {
+	t.Helper()
+
+	body, err := json.Marshal(v)
+	assert.NoError(t, err)
+	return body
 }

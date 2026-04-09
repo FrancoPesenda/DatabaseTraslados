@@ -3,21 +3,23 @@ package create
 import domain "github.com/FrancoPesenda/eventra/internal/domain"
 
 type request struct {
-	AdminUserName string `json:"admin_user_name"`
-	AdminEmail    string `json:"admin_email"`
-	AdminPassword string `json:"admin_password"`
-	Name          string `json:"name"`
-	LocationID    int    `json:"location_id"`
-	StartDate     string `json:"start_date"`
-	EndDate       string `json:"end_date"`
-	Image         string `json:"image,omitempty"`
+	Name       string `json:"name"`
+	UserName   string `json:"user_name"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Role       string `json:"role"`
+	LocationID int    `json:"location_id"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
+	Image      string `json:"image,omitempty"`
 }
 
 func (r request) adminDomain() domain.User {
 	return domain.User{
-		UserName: r.AdminUserName,
-		Email:    r.AdminEmail,
-		Password: r.AdminPassword,
+		UserName: r.UserName,
+		Email:    r.Email,
+		Password: r.Password,
+		Role:     domain.Role(r.Role),
 	}
 }
 

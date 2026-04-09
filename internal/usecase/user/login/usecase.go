@@ -63,6 +63,8 @@ func validateCredentials(user domain.User) error {
 		if !user.IsEmailValid() {
 			return domain.ErrEmailRequired
 		}
+		// capaz cambiar por  return errors.New("username or email is required")
+		// ya que nunca verifica el email
 	}
 
 	if !user.IsPasswordValid() {

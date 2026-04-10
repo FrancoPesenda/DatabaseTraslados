@@ -42,9 +42,16 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response, err := newLoginResponse(out)
+	if err != nil {
+		h.logger.Printf("[Layer:Handler][error_message:%s][user:%+v]", err.Error(), out)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(newLoginResponse(out))
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func processError(w http.ResponseWriter, err error) {

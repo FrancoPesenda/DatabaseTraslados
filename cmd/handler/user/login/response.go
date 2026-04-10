@@ -1,21 +1,28 @@
 package login
 
-import domain "github.com/FrancoPesenda/eventra/internal/domain"
+import (
+	"github.com/FrancoPesenda/eventra/internal/utils/token"
+
+	domain "github.com/FrancoPesenda/eventra/internal/domain"
+)
 
 type loginResponse struct {
-	ID       int    `json:"id"`
-	UserName string `json:"user_name"`
-	Email    string `json:"email"`
-	Role     string `json:"role"`
+	ID    int    `json:"id"`
+	Token string `json:"token"`
+	Role  string `json:"role"`
 }
 
-func newLoginResponse(u domain.User) loginResponse {
-	return loginResponse{
-		ID:       u.ID,
-		UserName: u.UserName,
-		Email:    u.Email,
-		Role:     string(u.Role),
+func newLoginResponse(u domain.User) (loginResponse, error) {
+	jwtToken, err := token.GenerateToken(u)
+	if err != nil {
+		return loginResponse{}, err
 	}
+
+	return loginResponse{
+		ID:    u.ID,
+		Token: jwtToken,
+		Role:  string(u.Role),
+	}, nil
 }
 
 type errorResponse struct {

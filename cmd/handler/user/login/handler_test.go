@@ -27,13 +27,6 @@ func newTestHandler(uc UseCase) *Handler {
 }
 
 func TestHandler_Login_WhenValidCredentials_ShouldReturn200WithBody(t *testing.T) {
-	expectedResponse := loginResponse{
-		ID:       1,
-		UserName: "johndoe",
-		Email:    "john@example.com",
-		Role:     string(domain.CompanyRole),
-	}
-
 	uc := &mockUseCase{
 		loginFn: func(_ context.Context, _ domain.User) (domain.User, error) {
 			return domain.User{
@@ -55,12 +48,12 @@ func TestHandler_Login_WhenValidCredentials_ShouldReturn200WithBody(t *testing.T
 	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, expectedResponse, response)
+	assert.Equal(t, 1, response.ID)
+	assert.Equal(t, "company", response.Role)
+	assert.NotEmpty(t, response.Token)
 }
 
 func TestHandler_Login_WhenInvalidJSON_ShouldReturn400(t *testing.T) {
-	expectedResponse := errorResponse{Error: "invalid request body"}
-
 	r := httptest.NewRequest(http.MethodPost, "/user/login", bytes.NewReader([]byte("not json")))
 	w := httptest.NewRecorder()
 
@@ -70,12 +63,10 @@ func TestHandler_Login_WhenInvalidJSON_ShouldReturn400(t *testing.T) {
 	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Equal(t, expectedResponse, response)
+	assert.Equal(t, "invalid request body", response.Error)
 }
 
 func TestHandler_Login_WhenUserNameIsEmpty_ShouldReturn400(t *testing.T) {
-	expectedResponse := errorResponse{Error: domain.ErrUserNameRequired.Error()}
-
 	uc := &mockUseCase{
 		loginFn: func(_ context.Context, _ domain.User) (domain.User, error) {
 			return domain.User{}, domain.ErrUserNameRequired
@@ -92,12 +83,10 @@ func TestHandler_Login_WhenUserNameIsEmpty_ShouldReturn400(t *testing.T) {
 	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Equal(t, expectedResponse, response)
+	assert.Equal(t, domain.ErrUserNameRequired.Error(), response.Error)
 }
 
 func TestHandler_Login_WhenPasswordIsEmpty_ShouldReturn400(t *testing.T) {
-	expectedResponse := errorResponse{Error: domain.ErrPasswordRequired.Error()}
-
 	uc := &mockUseCase{
 		loginFn: func(_ context.Context, _ domain.User) (domain.User, error) {
 			return domain.User{}, domain.ErrPasswordRequired
@@ -114,12 +103,10 @@ func TestHandler_Login_WhenPasswordIsEmpty_ShouldReturn400(t *testing.T) {
 	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Equal(t, expectedResponse, response)
+	assert.Equal(t, domain.ErrPasswordRequired.Error(), response.Error)
 }
 
 func TestHandler_Login_WhenInvalidCredentials_ShouldReturn401(t *testing.T) {
-	expectedResponse := errorResponse{Error: domain.ErrInvalidCredentials.Error()}
-
 	uc := &mockUseCase{
 		loginFn: func(_ context.Context, _ domain.User) (domain.User, error) {
 			return domain.User{}, domain.ErrInvalidCredentials
@@ -136,17 +123,10 @@ func TestHandler_Login_WhenInvalidCredentials_ShouldReturn401(t *testing.T) {
 	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Equal(t, expectedResponse, response)
+	assert.Equal(t, domain.ErrInvalidCredentials.Error(), response.Error)
 }
 
 func TestHandler_Login_WhenLoginByEmail_WhenValidCredentials_ShouldReturn200WithBody(t *testing.T) {
-	expectedResponse := loginResponse{
-		ID:       1,
-		UserName: "johndoe",
-		Email:    "john@example.com",
-		Role:     string(domain.CompanyRole),
-	}
-
 	uc := &mockUseCase{
 		loginFn: func(_ context.Context, _ domain.User) (domain.User, error) {
 			return domain.User{
@@ -168,7 +148,9 @@ func TestHandler_Login_WhenLoginByEmail_WhenValidCredentials_ShouldReturn200With
 	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, expectedResponse, response)
+	assert.Equal(t, 1, response.ID)
+	assert.Equal(t, "company", response.Role)
+	assert.NotEmpty(t, response.Token)
 }
 
 func TestHandler_Login_WhenUnexpectedError_ShouldReturn500(t *testing.T) {

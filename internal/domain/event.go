@@ -11,6 +11,7 @@ var (
 	ErrStartDateRequired  = errors.New("field 'start_date' is required")
 	ErrEndDateRequired    = errors.New("field 'end_date' is required")
 	ErrInvalidEventDates  = errors.New("start_date must be before or equal to end_date")
+	ErrLocationNotFound   = errors.New("location not found")
 )
 
 type Event struct {

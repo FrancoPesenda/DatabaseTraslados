@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
+	"github.com/FrancoPesenda/eventra/internal/utils/token"
 )
 
 type UseCase interface {
@@ -27,6 +28,24 @@ func NewCreateHandler(usecase UseCase, logger *log.Logger) *CreateHandler {
 }
 
 func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	// Extraer y validar token JWT
+	authHeader := r.Header.Get("Authorization")
+	tokenString, err := token.ExtractTokenFromHeader(authHeader)
+	if err != nil {
+		h.logger.Printf("[Layer:Handler][error_message:%s]", err.Error())
+		writeError(w, http.StatusUnauthorized, "missing or invalid authorization token")
+		return
+	}
+
+	claims, err := token.ValidateToken(tokenString)
+	if err != nil {
+		h.logger.Printf("[Layer:Handler][error_message:%s]", err.Error())
+		writeError(w, http.StatusUnauthorized, "invalid or expired token")
+		return
+	}
+
+	admin := token.ClaimsToUser(claims)
+
 	var req request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Printf("[Layer:Handler][error_message:%s][request_body:%+v]", err.Error(), req)
@@ -34,9 +53,9 @@ func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Printf("Incoming Request: %+v", req)
+	h.logger.Printf("Incoming Request: %+v [User:%s]", req, admin.UserName)
 
-	out, err := h.usecase.CreateEvent(r.Context(), req.adminDomain(), req.eventDomain())
+	out, err := h.usecase.CreateEvent(r.Context(), admin, req.eventDomain())
 	if err != nil {
 		h.logger.Printf("[Layer:Handler][error_message:%s][request_body:%+v]", err.Error(), req)
 		processError(w, err)
@@ -57,7 +76,8 @@ func processError(w http.ResponseWriter, err error) {
 		domain.ErrLocationIDRequired,
 		domain.ErrStartDateRequired,
 		domain.ErrEndDateRequired,
-		domain.ErrInvalidEventDates:
+		domain.ErrInvalidEventDates,
+		domain.ErrLocationNotFound:
 		writeError(w, http.StatusBadRequest, fmt.Sprintf("Bad Request error: %s", err.Error()))
 	case domain.ErrInvalidCredentials:
 		writeError(w, http.StatusUnauthorized, err.Error())

@@ -5,7 +5,6 @@ import (
 	"log"
 
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
-	"github.com/FrancoPesenda/eventra/internal/utils/security"
 )
 
 type UserRepository interface {
@@ -23,23 +22,9 @@ func NewUseCase(repository UserRepository) *UseCase {
 }
 
 func (u *UseCase) CreateEvent(ctx context.Context, admin domain.User, event domain.Event) (domain.Event, error) {
-	if err := validateAdmin(admin); err != nil {
-		log.Printf("[Layer:UseCase][error_message:%s][admin:%+v][event:%+v]", err.Error(), admin, event)
-		return domain.Event{}, err
-	}
-
-	storedAdmin, err := u.getAdmin(ctx, admin)
-	if err != nil {
-		log.Printf("[Layer:UseCase][error_message:%s][admin:%+v]", err.Error(), admin)
-		return domain.Event{}, domain.ErrInvalidCredentials
-	}
-
-	if err := security.CheckPassword(storedAdmin.Password, admin.Password); err != nil {
-		log.Printf("[Layer:UseCase][error_message:%s][admin:%+v]", err.Error(), admin)
-		return domain.Event{}, domain.ErrInvalidCredentials
-	}
-
-	if storedAdmin.Role != domain.AdminRole {
+	// El usuario ya viene autenticado del JWT, solo verificar que sea admin
+	if admin.Role != domain.AdminRole {
+		log.Printf("[Layer:UseCase][error_message: user is not admin][admin:%+v]", admin)
 		return domain.Event{}, domain.ErrAdminRequired
 	}
 

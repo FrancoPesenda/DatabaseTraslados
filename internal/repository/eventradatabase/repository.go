@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -95,6 +96,10 @@ func (r *Repository) insertEvent(ctx context.Context, event domain.Event) (int64
 	)
 	if err != nil {
 		log.Printf("[Layer:Repository][error_message:%s][request_body:%+v]", err.Error(), event)
+		// Detectar error de Foreign Key constraint (location_id no existe)
+		if strings.Contains(err.Error(), "1452") || strings.Contains(err.Error(), "fk_event_location") {
+			return 0, domain.ErrLocationNotFound
+		}
 		return 0, fmt.Errorf("insert event: %w", err)
 	}
 

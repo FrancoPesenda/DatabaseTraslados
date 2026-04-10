@@ -13,7 +13,7 @@ func newHTTPMux(createHandler *createcompanyhandler.CreateHandler, loginHandler 
 
 	mux.HandleFunc("POST /user/company", createHandler.Handle)
 	mux.HandleFunc("POST /user/login", loginHandler.Login)
-	mux.HandleFunc("/event", createEventHandler.Handle)
+	mux.HandleFunc("POST /event", createEventHandler.Handle)
 	mux.HandleFunc("GET /ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("pong"))

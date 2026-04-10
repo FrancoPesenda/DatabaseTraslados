@@ -2,11 +2,9 @@ package create
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	domain "github.com/FrancoPesenda/eventra/internal/domain"
-	"github.com/FrancoPesenda/eventra/internal/utils/security"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,11 +27,7 @@ func (m *mockRepository) CreateEvent(ctx context.Context, event domain.Event) (d
 }
 
 func TestUseCase_CreateEvent_WhenAdminCanCreateEvent(t *testing.T) {
-	hash, _ := security.HashPassword("secret")
 	repo := &mockRepository{
-		getByUserNameFn: func(_ context.Context, _ string) (domain.User, error) {
-			return domain.User{Password: hash, Role: domain.AdminRole}, nil
-		},
 		createEventFn: func(_ context.Context, event domain.Event) (domain.Event, error) {
 			event.ID = 123
 			return event, nil
@@ -42,7 +36,8 @@ func TestUseCase_CreateEvent_WhenAdminCanCreateEvent(t *testing.T) {
 
 	uc := NewUseCase(repo)
 
-	result, err := uc.CreateEvent(context.Background(), domain.User{UserName: "admin", Password: "secret"}, domain.Event{
+	// User already authenticated via JWT, just needs admin role
+	result, err := uc.CreateEvent(context.Background(), domain.User{ID: 1, UserName: "admin", Role: domain.AdminRole}, domain.Event{
 		Name:       "Event 1",
 		LocationID: 1,
 		StartDate:  "2026-05-01",
@@ -55,16 +50,12 @@ func TestUseCase_CreateEvent_WhenAdminCanCreateEvent(t *testing.T) {
 }
 
 func TestUseCase_CreateEvent_WhenAdminIsNotAdmin_ShouldReturnErrAdminRequired(t *testing.T) {
-	hash, _ := security.HashPassword("secret")
-	repo := &mockRepository{
-		getByUserNameFn: func(_ context.Context, _ string) (domain.User, error) {
-			return domain.User{Password: hash, Role: domain.CompanyRole}, nil
-		},
-	}
+	repo := &mockRepository{}
 
 	uc := NewUseCase(repo)
 
-	_, err := uc.CreateEvent(context.Background(), domain.User{UserName: "admin", Password: "secret"}, domain.Event{
+	// User with company role (not admin)
+	_, err := uc.CreateEvent(context.Background(), domain.User{ID: 1, UserName: "company", Role: domain.CompanyRole}, domain.Event{
 		Name:       "Event 1",
 		LocationID: 1,
 		StartDate:  "2026-05-01",
@@ -75,16 +66,11 @@ func TestUseCase_CreateEvent_WhenAdminIsNotAdmin_ShouldReturnErrAdminRequired(t 
 }
 
 func TestUseCase_CreateEvent_WhenEventHasInvalidDates_ShouldReturnErrInvalidEventDates(t *testing.T) {
-	hash, _ := security.HashPassword("secret")
-	repo := &mockRepository{
-		getByUserNameFn: func(_ context.Context, _ string) (domain.User, error) {
-			return domain.User{Password: hash, Role: domain.AdminRole}, nil
-		},
-	}
+	repo := &mockRepository{}
 
 	uc := NewUseCase(repo)
 
-	_, err := uc.CreateEvent(context.Background(), domain.User{UserName: "admin", Password: "secret"}, domain.Event{
+	_, err := uc.CreateEvent(context.Background(), domain.User{ID: 1, UserName: "admin", Role: domain.AdminRole}, domain.Event{
 		Name:       "Event 1",
 		LocationID: 1,
 		StartDate:  "2026-05-05",
@@ -94,21 +80,21 @@ func TestUseCase_CreateEvent_WhenEventHasInvalidDates_ShouldReturnErrInvalidEven
 	assert.ErrorIs(t, err, domain.ErrInvalidEventDates)
 }
 
-func TestUseCase_CreateEvent_WhenAdminCredentialsAreInvalid_ShouldReturnErrInvalidCredentials(t *testing.T) {
+func TestUseCase_CreateEvent_WhenLocationNotFound_ShouldReturnErrLocationNotFound(t *testing.T) {
 	repo := &mockRepository{
-		getByEmailFn: func(_ context.Context, _ string) (domain.User, error) {
-			return domain.User{}, errors.New("not found")
+		createEventFn: func(_ context.Context, event domain.Event) (domain.Event, error) {
+			return domain.Event{}, domain.ErrLocationNotFound
 		},
 	}
 
 	uc := NewUseCase(repo)
 
-	_, err := uc.CreateEvent(context.Background(), domain.User{Email: "admin@example.com", Password: "secret"}, domain.Event{
+	_, err := uc.CreateEvent(context.Background(), domain.User{ID: 1, UserName: "admin", Role: domain.AdminRole}, domain.Event{
 		Name:       "Event 1",
-		LocationID: 1,
+		LocationID: 999, // Non-existent location
 		StartDate:  "2026-05-01",
 		EndDate:    "2026-05-02",
 	})
 
-	assert.ErrorIs(t, err, domain.ErrInvalidCredentials)
+	assert.ErrorIs(t, err, domain.ErrLocationNotFound)
 }

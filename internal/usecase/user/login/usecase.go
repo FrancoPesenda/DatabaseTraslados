@@ -57,16 +57,8 @@ func (u *UseCase) Login(ctx context.Context, user domain.User) (domain.User, err
 
 func validateCredentials(user domain.User) error {
 	if !user.IsUserNameValid() && !user.IsEmailValid() {
-		if !user.IsUserNameValid() {
-			return domain.ErrUserNameRequired
-		}
-		if !user.IsEmailValid() {
-			return domain.ErrEmailRequired
-		}
-		// capaz cambiar por  return errors.New("username or email is required")
-		// ya que nunca verifica el email
+		return domain.ErrUserNameorEmailRequired
 	}
-
 	if !user.IsPasswordValid() {
 		return domain.ErrPasswordRequired
 	}

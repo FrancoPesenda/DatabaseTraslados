@@ -3,13 +3,14 @@ package user
 import "errors"
 
 var (
-	ErrNameRequired       = errors.New("field 'name' is required")
-	ErrLastNameRequired   = errors.New("field 'last_name' is required")
-	ErrUserNameRequired   = errors.New("field 'user_name' is required")
-	ErrEmailRequired      = errors.New("field 'email' is required")
-	ErrPasswordRequired   = errors.New("field 'password' is required")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrAdminRequired      = errors.New("admin role required")
+	ErrNameRequired            = errors.New("field 'name' is required")
+	ErrLastNameRequired        = errors.New("field 'last_name' is required")
+	ErrUserNameRequired        = errors.New("field 'user_name' is required")
+	ErrEmailRequired           = errors.New("field 'email' is required")
+	ErrPasswordRequired        = errors.New("field 'password' is required")
+	ErrInvalidCredentials      = errors.New("invalid credentials")
+	ErrAdminRequired           = errors.New("admin role required")
+	ErrUserNameorEmailRequired = errors.New("username or email is required")
 )
 
 const (

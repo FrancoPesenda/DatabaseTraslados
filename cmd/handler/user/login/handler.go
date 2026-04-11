@@ -35,16 +35,16 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Printf("Incoming Request: %+v", req)
 
-	out, err := h.usecase.Login(r.Context(), req.toDomain())
+	useCaseResponse, err := h.usecase.Login(r.Context(), req.toDomain())
 	if err != nil {
 		h.logger.Printf("[Layer:Handler][error_message:%s][request_body:%+v]", err.Error(), req)
 		processError(w, err)
 		return
 	}
 
-	response, err := newLoginResponse(out)
+	response, err := newLoginResponse(useCaseResponse)
 	if err != nil {
-		h.logger.Printf("[Layer:Handler][error_message:%s][user:%+v]", err.Error(), out)
+		h.logger.Printf("[Layer:Handler][error_message:%s][user:%+v]", err.Error(), useCaseResponse)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -56,7 +56,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func processError(w http.ResponseWriter, err error) {
 	switch err {
-	case domain.ErrUserNameRequired, domain.ErrPasswordRequired:
+	case domain.ErrUserNameorEmailRequired,
+		domain.ErrPasswordRequired:
 		writeError(w, http.StatusBadRequest, err.Error())
 	case domain.ErrInvalidCredentials:
 		writeError(w, http.StatusUnauthorized, err.Error())

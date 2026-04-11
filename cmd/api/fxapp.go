@@ -12,9 +12,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/fx"
 
+	createeventhandler "github.com/FrancoPesenda/eventra/cmd/handler/event/create"
 	createcompanyhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/createcompany"
 	loginhandler "github.com/FrancoPesenda/eventra/cmd/handler/user/login"
 	"github.com/FrancoPesenda/eventra/internal/repository/eventradatabase"
+	"github.com/FrancoPesenda/eventra/internal/usecase/event/create"
 	"github.com/FrancoPesenda/eventra/internal/usecase/user/createcompany"
 	"github.com/FrancoPesenda/eventra/internal/usecase/user/login"
 	"github.com/FrancoPesenda/eventra/internal/utils/config"
@@ -29,6 +31,7 @@ func NewFxApp() *fx.App {
 			eventradatabase.NewRepository,
 			func(r *eventradatabase.Repository) createcompany.UserRepository { return r },
 			func(r *eventradatabase.Repository) login.UserRepository { return r },
+			func(r *eventradatabase.Repository) create.UserRepository { return r },
 			fx.Annotate(
 				createcompany.NewUseCase,
 				fx.As(new(createcompanyhandler.UseCase)),
@@ -39,6 +42,11 @@ func NewFxApp() *fx.App {
 				fx.As(new(loginhandler.UseCase)),
 			),
 			loginhandler.NewHandler,
+			fx.Annotate(
+				create.NewUseCase,
+				fx.As(new(createeventhandler.UseCase)),
+			),
+			createeventhandler.NewCreateHandler,
 			newHTTPMux,
 			newHTTPServer,
 		),
